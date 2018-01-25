@@ -20,4 +20,4 @@ int main(void)
     }
 }
 
-/Pol got in
+*/Pol got in
