@@ -6,7 +6,6 @@
  */ 
 
 #include "sam.h"
-#include <math.h>
 #include "fsInjection.h""
 
 float theta_hat_rel,theta_rel,delta_theta_rel;

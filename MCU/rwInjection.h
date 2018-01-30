@@ -6,6 +6,5 @@
  */ 
 
 #include "sam.h"
-#include <math.h>
 
 float rwInjection(int isPrimaryRWactive, int cmdToFaultRW, float tau_c)

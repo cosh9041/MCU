@@ -6,6 +6,5 @@
  */ 
 
 #include "sam.h"
-#include <math.h>
 
 void fsInjection(int cmdToFaultSensor);

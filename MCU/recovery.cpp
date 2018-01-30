@@ -6,7 +6,6 @@
  */ 
 
 #include "sam.h"
-#include <math.h>
 #include "recovery.h"
 
 void recovery(int faultType)

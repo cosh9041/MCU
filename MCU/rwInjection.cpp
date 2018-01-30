@@ -7,14 +7,19 @@
 
 
 #include "sam.h"
-#include <math.h>
 #include "rwInjection.h""
 
+
+float calcInducedFric(float omega)
+{
+	return 5; /*need to complete function later*/
+}
 
 float rwInjection(int isPrimaryRWactive, int cmdToFaultRW, float tau_c, float omega)
 {
 	/*Definition of Variables*/
 	float tau_hat_c, tau_hat_f;
+	float delta_omega = 0.0001; /*Subject to change dependent on tolerances*/
 
 	/*Check if we are command to fault and that command is given to the primary reaction wheel*/
 	if (isPrimaryRWactive == 1) && (cmdToFaultRW == 1)
@@ -25,8 +30,8 @@ float rwInjection(int isPrimaryRWactive, int cmdToFaultRW, float tau_c, float om
 		}
 		else 
 		{
-			t_hat_f = calcInducedFric(); /*Calculate induced friction*/
-			tau_hat_c = tau_c - tau_f; /*Add induced firiction into the commanded torque to appear af fault*/
+			tau_hat_f = calcInducedFric(omega); /*Calculate induced friction*/
+			tau_hat_c = tau_c - tau_f; /*Add induced friction into the commanded torque to appear af fault*/
 		}
 	}
 	else

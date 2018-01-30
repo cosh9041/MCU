@@ -6,7 +6,6 @@
  */ 
 
 #include "sam.h"
-#include <math.h>
 #include "faultCheckRW.h"
 
 int faultCheckRW();
