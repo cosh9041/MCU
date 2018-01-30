@@ -12,14 +12,14 @@
 
 float calcInducedFric(float omega)
 {
-	return 5; /*need to complete function later*/
+	return 5; /*TODO: need to complete function later*/
 }
 
 float rwInjection(int isPrimaryRWactive, int cmdToFaultRW, float tau_c, float omega)
 {
 	/*Definition of Variables*/
 	float tau_hat_c, tau_hat_f;
-	float delta_omega = 0.0001; /*Subject to change dependent on tolerances*/
+	float delta_omega = 0.0001; /*TODO: Subject to change dependent on tolerances*/
 
 	/*Check if we are command to fault and that command is given to the primary reaction wheel*/
 	if (isPrimaryRWactive == 1) && (cmdToFaultRW == 1)

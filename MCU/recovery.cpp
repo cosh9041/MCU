@@ -16,12 +16,12 @@ void recovery(int faultType)
 	} 
 	if (faultType == 1)
 	{
-		/*Turn on power to RW2*/
-		/*Switch command to RW2*/
+		/*TODO: Turn on power to RW2*/
+		/*TODO: Switch command to RW2*/
 	}
 	if (faultType == 2)
 	{
-		/*Switch sensor reading to FS2*/
+		/*TODO: Switch sensor reading to FS2*/
 	}
 return
 }

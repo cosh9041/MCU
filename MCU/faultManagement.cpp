@@ -45,14 +45,14 @@ void faultManagement(){
 			else /*if not recovering yet, act dependent on what type of fault it is*/
 			{
 				isFaulted == 1;
-				/*Alert GSU Function here*/
+				/*TODO: Function to Alert GSU Function here*/
 				if (faultType == 2)
 				{
 					return
 				}
 				else
 				{
-					/*Shut off power to RW*/
+					/*TODO: Function to Shut off power to RW*/
 					return
 				}
 			}
