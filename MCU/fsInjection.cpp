@@ -5,13 +5,13 @@
  * Author : Pol Sieira
  */ 
 
-#include "sam.h"
+//#include "sam.h"
 #include "fsInjection.h"
-
-float theta_hat_rel,theta_rel,delta_theta_rel;
 
 void fsInjection(int cmdToFaultSensor)
 {
+	/*Definition of Variables*/
+	float theta_hat_rel,theta_rel,delta_theta_rel;	
 	if (cmdToFaultSensor == 1)
 	{
 		theta_hat_rel = theta_rel + delta_theta_rel;
@@ -20,5 +20,5 @@ void fsInjection(int cmdToFaultSensor)
 	{
 		theta_hat_rel = theta_rel;
 	}
-return
+return;
 }

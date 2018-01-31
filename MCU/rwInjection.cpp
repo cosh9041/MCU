@@ -6,8 +6,8 @@
  */ 
 
 
-#include "sam.h"
-#include "rwInjection.h""
+//#include "sam.h"
+#include "rwInjection.h"
 
 
 float calcInducedFric(float omega)
@@ -22,16 +22,16 @@ float rwInjection(int isPrimaryRWactive, int cmdToFaultRW, float tau_c, float om
 	float delta_omega = 0.0001; /*TODO: Subject to change dependent on tolerances*/
 
 	/*Check if we are command to fault and that command is given to the primary reaction wheel*/
-	if (isPrimaryRWactive == 1) && (cmdToFaultRW == 1)
+	if (isPrimaryRWactive == 1 && cmdToFaultRW == 1)
 	{
-		if (omega < delta_omega) && (omega > -delta_omega)
+		if (omega < delta_omega && omega > -delta_omega)
 		{
 			tau_hat_c = 0; /* Determine if the motor is spinning too slowly and if it is set commanded torque to zero */
 		}
 		else 
 		{
 			tau_hat_f = calcInducedFric(omega); /*Calculate induced friction*/
-			tau_hat_c = tau_c - tau_f; /*Add induced friction into the commanded torque to appear af fault*/
+			tau_hat_c = tau_c - tau_hat_f; /*Add induced friction into the commanded torque to appear as fault*/
 		}
 	}
 	else
