@@ -6,7 +6,48 @@
  */ 
 
 //#include "sam.h"
+#include "faultCheckRW.h"
+#include "checkThreshold.h"
 
-int faultCheckRW(){
+int faultCheckRW()
+{
+	/*Defining the Variables*/
+	int faultDetected, faultTimerActive;
+	
+	/*Run threshold check*/
+	faultDetected = checkThreshold();
+	
+	/*Is a fault detected?*/
+	if (faultDetected == 1)
+	{
+		if (faultTimerActive == 1)
+		{
+			/*TODO: if (time < 30)
+			{
+				return;
+			}
+			else
+			{
+				timer_delete();
+				faultDetected = 1;
+			}
+			*/
+		}
+		else
+		{
+			/*TODO: timer_create*/
+		}
+	}
+	else
+	{
+		if (faultTimerActive == 1)
+		{
+			/*TODO: timer_delete*/	
+		}
+		else
+		{
+			return;
+		}
+	}
 	return 0;
 }
