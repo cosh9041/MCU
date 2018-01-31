@@ -10,6 +10,6 @@
 
 //#include "sam.h"
 
-void fsInjection(int cmdToFaultSensor);
+float fsInjection(int cmdToFaultSensor);
 
 #endif
