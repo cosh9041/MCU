@@ -5,7 +5,7 @@
  * Author : Pol Sieira
  */ 
 
-#include "sam.h"
+//#include "sam.h"
 #include "faultManagement.h"
 #include "faultCheckRW.h"
 #include "faultCheckFS.h"

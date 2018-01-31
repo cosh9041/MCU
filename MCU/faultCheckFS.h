@@ -5,7 +5,12 @@
  * Author : Pol Sieira
  */ 
 
-#include "sam.h"
+#ifndef FAULTCHECKFS_H_
+#define FAULTCHECKFS_H_
+
+//#include "sam.h"
 #include "faultCheckFS.h"
 
 int faultCheckFS();
+
+#endif

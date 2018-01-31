@@ -5,7 +5,12 @@
  * Author : Pol Sieira
  */ 
 
-#include "sam.h"
+#ifndef RECOVERY_H_
+#define RECOVERY_H_
+
+//#include "sam.h"
 #include "recovery.h"
 
 void recovery(int faultType);
+
+#endif
