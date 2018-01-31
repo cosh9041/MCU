@@ -5,6 +5,11 @@
  * Author : Pol Sieira
  */ 
 
-#include "sam.h"
+#ifndef FSINJECTION_H_
+#define FSINJECTION_H_
+
+//#include "sam.h"
 
 void fsInjection(int cmdToFaultSensor);
+
+#endif

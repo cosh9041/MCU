@@ -5,7 +5,10 @@
  * Author : Pol Sieira
  */ 
 
-#include "sam.h"
+#ifndef FAULTMANAGEMENT_H_
+#define FAULTMANAGEMENT_H_
+
+//#include "sam.h"
 #include <math.h>
 #include "faultManagement.h"
 #include "faultCheckRW.h"
@@ -13,3 +16,5 @@
 #include "recovery.h"
 
 void faultManagement();
+
+#endif

@@ -5,7 +5,7 @@
  * Author : Pol Sieira
  */ 
 
-#include "sam.h"
+//#include "sam.h"
 #include "faultManagement.h"
 #include "faultCheckRW.h"
 #include "faultCheckFS.h"
@@ -24,23 +24,23 @@ void faultManagement(){
 			recovery(faultType);
 			isFaulted == 0;
 			isRecovering == 1;
-			return
+			return;
 		}		
 		else /*if not, let system fault and return*/
 		{
-			return
+			return;
 		}
 	}
 	
 	else /*if not faulting, begin fault checks*/
 	{
-		faultType faultCheckRW()
-		faultType faultCheckFS()	
+		faultType = faultCheckRW();
+		faultType = faultCheckFS();	
 		if (faultType != 0) /*if faulted, faultType = 1 for RW fault and faultType = 2 for FS fault*/
 		{
 			if (isRecovering == 1) /*if currently recovering, return and let system recover*/
 			{
-				return
+				return;
 			}
 			else /*if not recovering yet, act dependent on what type of fault it is*/
 			{
@@ -48,12 +48,12 @@ void faultManagement(){
 				/*TODO: Function to Alert GSU Function here*/
 				if (faultType == 2)
 				{
-					return
+					return;
 				}
 				else
 				{
 					/*TODO: Function to Shut off power to RW*/
-					return
+					return;
 				}
 			}
 		}	
@@ -62,11 +62,11 @@ void faultManagement(){
 			if (isRecovering == 1)
 			{
 				isRecovering == 0;
-				return
+				return;
 			}	
 			else
 			{
-				return
+				return;
 			}
 		}	
 	}

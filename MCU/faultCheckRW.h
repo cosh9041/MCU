@@ -5,7 +5,12 @@
  * Author : Pol Sieira
  */ 
 
-#include "sam.h"
+#ifndef FAULTCHECKRW_H_
+#define FAULTCHECKRW_H_
+
+//#include "sam.h"
 #include "faultCheckRW.h"
 
 int faultCheckRW();
+
+#endif

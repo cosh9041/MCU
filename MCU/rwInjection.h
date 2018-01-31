@@ -5,6 +5,11 @@
  * Author : Pol Sieira
  */ 
 
-#include "sam.h"
+#ifndef RWINJECTION_H_
+#define RWINJECTION_H_
 
-float rwInjection(int isPrimaryRWactive, int cmdToFaultRW, float tau_c)
+//#include "sam.h"
+
+float rwInjection(int isPrimaryRWactive, int cmdToFaultRW, float tau_c);
+
+#endif

@@ -5,19 +5,18 @@
  * Author : kele5448
  */ 
 
+//hi
+//#include "sam.h"
 
-#include "sam.h"
-
-
+//TODO: Implement sam.cpp. Not sure if we need to or if this comes from somewhere else. 
+//TODO: Implement systemInit()
 int main(void)
 {
     /* Initialize the SAM system */
-    SystemInit();
+    //SystemInit();
 
     /* Replace with your application code */
     while (1) 
     {
     }
 }
-
-*/Pol got in

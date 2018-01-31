@@ -5,7 +5,7 @@
  * Author : Pol Sieira
  */ 
 
-#include "sam.h"
+//#include "sam.h"
 #include "recovery.h"
 
 void recovery(int faultType)
@@ -23,5 +23,5 @@ void recovery(int faultType)
 	{
 		/*TODO: Switch sensor reading to FS2*/
 	}
-return
+return;
 }
