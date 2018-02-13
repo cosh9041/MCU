@@ -8,17 +8,18 @@
 //#include "sam.h"
 #include "fsInjection.h"
 
-void fsInjection(int cmdToFaultSensor)
+float fsInjection(int cmdToFaultSensor)
 {
 	/*Definition of Variables*/
 	float theta_hat_rel,theta_rel,delta_theta_rel;	
+	
 	if (cmdToFaultSensor == 1)
 	{
-		theta_hat_rel = theta_rel + delta_theta_rel;
+		delta_theta_rel = 10; /*TODO change to better bias*/
 	}
 	else
 	{
-		theta_hat_rel = theta_rel;
+		delta_theta_rel = 0; /*No bias if not commanded to fault*/;
 	}
-return;
+return delta_theta_rel;
 }
