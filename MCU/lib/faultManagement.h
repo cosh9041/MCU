@@ -11,12 +11,12 @@ class FaultManagement {
 	public:
 		FaultManagement();
     void thisIsATest();
-		/*
     void faultManagement();
+	private:
+		int faultCheck();
     int checkThreshold();
     int faultCheckFS();
     int faultCheckRW();
     void recovery(int faultType);
-		*/
 };
 #endif
