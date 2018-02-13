@@ -6,9 +6,13 @@
  */ 
 
 //#include "sam.h"
+#include <stdio.h>
 #include "faultManagement.h"
 
-void faultManagement(){
+FaultManagement::FaultManagement() {
+}
+
+void FaultManagement::faultManagement(){
 	
 	/*Definition of Variables*/
 	int isFaulted,isRecovering,cmdToRecover,faultType;
@@ -31,8 +35,8 @@ void faultManagement(){
 	
 	else /*if not faulting, begin fault checks*/
 	{
-		faultType = faultCheckRW();
-		faultType = faultCheckFS();	
+		//faultType = faultCheckRW();
+		//faultType = faultCheckFS();	
 		if (faultType != 0) /*if faulted, faultType = 1 for RW fault and faultType = 2 for FS fault*/
 		{
 			if (isRecovering == 1) /*if currently recovering, return and let system recover*/
@@ -68,12 +72,12 @@ void faultManagement(){
 	}
 }
 
-int checkThreshold()
+int FaultManagement::checkThreshold()
 {
 	return 0; /*TODO: Change to actual threshold checking method*/
 }
 
-int faultCheck()
+int FaultManagement::faultCheck()
 {
 	/*Defining the Variables*/
 	int faultDetected, faultTimerActive;
@@ -110,14 +114,14 @@ int faultCheck()
 		}
 		else
 		{
-			return;
+			return 0;
 		}
 	}
 	return 0;
 }
 
 
-void recovery(int faultType)
+void FaultManagement::recovery(int faultType)
 {
 	if (faultType == 0)
 	{
