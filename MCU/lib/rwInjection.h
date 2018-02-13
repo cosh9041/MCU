@@ -10,6 +10,12 @@
 
 //#include "sam.h"
 
-float rwInjection(int isPrimaryRWactive, int cmdToFaultRW, float tau_c);
+class RwInjection {
+	public: 
+		RwInjection();
+		float injectFault(int isPrimaryRWactive, int cmdToFaultRW, float tau_c, float omega);
+	private:
+		float calcInducedFric(float omega);
+};
 
 #endif

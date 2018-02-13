@@ -12,11 +12,6 @@
 FaultManagement::FaultManagement() {
 }
 
-
-void FaultManagement::thisIsATest() {
-	printf("it worked!");
-}
-
 void FaultManagement::faultManagement(){
 	
 	/*Definition of Variables*/
