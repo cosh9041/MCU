@@ -8,8 +8,13 @@
 #ifndef FSINJECTION_H_
 #define FSINJECTION_H_
 
-//#include "sam.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 float fsInjection(int cmdToFaultSensor);
 
+#ifdef __cplusplus
+}
+#endif
 #endif

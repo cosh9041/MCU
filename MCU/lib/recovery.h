@@ -8,9 +8,13 @@
 #ifndef RECOVERY_H_
 #define RECOVERY_H_
 
-//#include "sam.h"
-#include "recovery.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void recovery(int faultType);
 
+#ifdef __cpluscplus
+}
+#endif
 #endif

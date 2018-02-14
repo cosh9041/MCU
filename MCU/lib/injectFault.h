@@ -12,8 +12,6 @@
 extern "C" {
 #endif
 
-float calcInducedFric(float omega);
-
 float injectFault(int isPrimaryRWactive, int cmdToFaultRW, float tau_c, float omega);
 
 #ifdef __cplusplus

@@ -1,5 +1,5 @@
 ﻿/*
- * rwInjection.cpp
+ * rwInjection.c
  *
  * Created: 1/29/2018 2:41:34 PM
  * Author : Pol Sieira
@@ -8,7 +8,9 @@
 
 //#include "sam.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include "rwInjection.h"
+
 
 
 float calcInducedFric(float omega)
