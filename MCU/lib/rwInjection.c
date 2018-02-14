@@ -9,8 +9,8 @@
 //#include "sam.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "injectFault.h"
-#include "calcInducedFric.h"
+#include "rwInjection.h"
+
 
 
 float calcInducedFric(float omega)

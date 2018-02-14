@@ -10,10 +10,7 @@
 #include <stdlib.h>
 #include "faultManagement.h"
 
-FaultManagement::FaultManagement() {
-}
-
-void FaultManagement::faultManagement(){
+void faultManagement(){
 	
 	/*Definition of Variables*/
 	int isFaulted,isRecovering,cmdToRecover,faultType;
@@ -73,12 +70,12 @@ void FaultManagement::faultManagement(){
 	}
 }
 
-int FaultManagement::checkThreshold()
+int checkThreshold()
 {
 	return 0; /*TODO: Change to actual threshold checking method*/
 }
 
-int FaultManagement::faultCheck()
+int faultCheck()
 {
 	/*Defining the Variables*/
 	int faultDetected, faultTimerActive;
@@ -122,11 +119,11 @@ int FaultManagement::faultCheck()
 }
 
 
-void FaultManagement::recovery(int faultType)
+void recovery(int faultType)
 {
 	if (faultType == 0)
 	{
-		throw;
+		/*TODO: Throw error*/
 	} 
 	if (faultType == 1)
 	{
