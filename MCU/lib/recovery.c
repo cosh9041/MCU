@@ -14,7 +14,7 @@ void recovery(int faultType)
 {
 	if (faultType == 0)
 	{
-		throw;
+		/*TODO: some type of error*/
 	} 
 	if (faultType == 1)
 	{
