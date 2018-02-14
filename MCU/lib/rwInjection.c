@@ -1,5 +1,5 @@
 ﻿/*
- * rwInjection.cpp
+ * rwInjection.c
  *
  * Created: 1/29/2018 2:41:34 PM
  * Author : Pol Sieira
@@ -9,19 +9,16 @@
 //#include "sam.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "rwInjection.h"
+#include "injectFault.h"
+#include "calcInducedFric.h"
 
-// Class constructor
-RwInjection::RwInjection() {
 
-}
-
-float RwInjection::calcInducedFric(float omega)
+float calcInducedFric(float omega)
 {
 	return 5; /*TODO: need to complete function later*/
 }
 
-float RwInjection::injectFault(int isPrimaryRWactive, int cmdToFaultRW, float tau_c, float omega)
+float injectFault(int isPrimaryRWactive, int cmdToFaultRW, float tau_c, float omega)
 {
 	/*Definition of Variables*/
 	float tau_hat_c, tau_hat_f;

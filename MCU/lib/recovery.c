@@ -1,5 +1,5 @@
 ﻿/*
- * recovery.cpp
+ * recovery.c
  *
  * Created: 1/29/2018 3:16:34 PM
  * Author : Pol Sieira
@@ -14,7 +14,7 @@ void recovery(int faultType)
 {
 	if (faultType == 0)
 	{
-		throw;
+		/*TODO: some type of error*/
 	} 
 	if (faultType == 1)
 	{
