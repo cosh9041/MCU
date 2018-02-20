@@ -11,18 +11,20 @@
 
 int recovery(int faultType)
 {
-
-	printf("PENIS");
-	/*
 	if (faultType == 0)
 	{
+		return 0;
 	} 
 	if (faultType == 1)
 	{
+		return 1;
 	}
 	if (faultType == 2)
 	{
+		return 2;
 	}
-	*/
-	return 5;
+	else
+	{
+		return 10;
+	}
 }
