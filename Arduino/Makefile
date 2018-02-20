@@ -3,16 +3,23 @@
 CC = gcc
 CFLAGS = -Wall
 LFLAGS = -lm
-OBJS = *.o
+OBJS = LLAMAS/*.o
+CFILES = LLAMAS/*.c
+HFILES = LLAMAS/*.h
 MAIN = test
 
-all: *.c *.h
-	$(CC) $(CFLAGS) -c *.c
+
+all: $(CFILES) $(HFILES)
+	$(CC) $(CFLAGS) -c $(CFILES)
+	@echo "Compilation complete"
 	
 
 test: 
 	make all
 	$(CC) $(CFLAGS) $(LFLAGS) -o $(MAIN) $(OBJS)
+	@echo"Linking complete!"
+	@echo "Executing test!"
 	./test
 clean: 
-	rm *.o test
+	rm -f $(OBJS)
+	@echo "Cleanup complete!"
