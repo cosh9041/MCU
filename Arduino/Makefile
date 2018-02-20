@@ -10,7 +10,7 @@ all: *.c *.h
 	$(CC) $(CFLAGS) -c *.c
 	
 
-test: $(OBJS)
+test: 
 	make all
 	$(CC) $(CFLAGS) $(LFLAGS) -o $(MAIN) $(OBJS)
 	./test
