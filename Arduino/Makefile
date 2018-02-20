@@ -1,5 +1,18 @@
 .PHONY: all
 
-allc: checkThreshold.cpp 
-	gcc -c checkThreshold.cpp 
+CC = gcc
+CFLAGS = -Wall
+LFLAGS = -lm
+OBJS = *.o
+MAIN = test
+
+all: *.c *.h
+	$(CC) $(CFLAGS) -c *.c
 	
+
+test: $(OBJS)
+	make all
+	$(CC) $(CFLAGS) $(LFLAGS) -o $(MAIN) $(OBJS)
+	./test
+clean: 
+	rm *.o test

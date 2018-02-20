@@ -5,12 +5,14 @@
  * Author : Pol Sieira
  */ 
 
-//#include <stdio.h>
+#include <stdio.h>
 //#include <stdlib.h>
 #include "recovery.h"
 
 int recovery(int faultType)
 {
+
+	printf("PENIS");
 	/*
 	if (faultType == 0)
 	{
@@ -21,6 +23,6 @@ int recovery(int faultType)
 	if (faultType == 2)
 	{
 	}
+	*/
 	return 5;
-*/
 }
