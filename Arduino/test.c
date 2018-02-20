@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include "lib/faultManagement.h"
-#include "lib/rwInjection.h"
+#include "LLAMAS/faultManagement.h"
+#include "LLAMAS/rwInjection.h"
 
 void testRwInjection() {
 	float tau_c = 0.0;

@@ -12,9 +12,9 @@
 extern "C" {
 #endif
 
-void recovery(int faultType);
+int recovery(int faultType);
 
-#ifdef __cpluscplus
+#ifdef __cplusplus
 }
 #endif
 #endif

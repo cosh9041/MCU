@@ -117,21 +117,3 @@ int faultCheck()
 	}
 	return 0;
 }
-
-
-void recovery(int faultType)
-{
-	if (faultType == 0)
-	{
-		/*TODO: Throw error*/
-	} 
-	if (faultType == 1)
-	{
-		/*TODO: Switch command to RW2*/
-	}
-	if (faultType == 2)
-	{
-		/*TODO: Switch sensor reading to FS2*/
-	}
-return;
-}
