@@ -1,5 +1,5 @@
 ﻿/*
- * faultManagement.cpp
+ * faultManagement.c
  *
  * Created: 1/29/2018 2:41:34 PM
  * Author : Pol Sieira
@@ -7,12 +7,10 @@
 
 //#include "sam.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include "faultManagement.h"
 
-FaultManagement::FaultManagement() {
-}
-
-void FaultManagement::faultManagement(){
+void faultManagement(){
 	
 	/*Definition of Variables*/
 	int isFaulted,isRecovering,cmdToRecover,faultType;
@@ -72,12 +70,12 @@ void FaultManagement::faultManagement(){
 	}
 }
 
-int FaultManagement::checkThreshold()
+int checkThreshold()
 {
 	return 0; /*TODO: Change to actual threshold checking method*/
 }
 
-int FaultManagement::faultCheck()
+int faultCheck()
 {
 	/*Defining the Variables*/
 	int faultDetected, faultTimerActive;
@@ -118,41 +116,4 @@ int FaultManagement::faultCheck()
 		}
 	}
 	return 0;
-}
-
-
-void FaultManagement::recovery(int faultType)
-{
-	if (faultType == 0)
-	{
-		throw;
-	} 
-	if (faultType == 1)
-	{
-		/*TODO: Switch command to RW2*/
-	}
-	if (faultType == 2)
-	{
-		/*TODO: Switch sensor reading to FS2*/
-	}
-return;
-}
-﻿
-
-void recovery(int faultType)
-{
-	if (faultType == 0)
-	{
-		throw;
-	} 
-	if (faultType == 1)
-	{
-		/*TODO: Turn on power to RW2*/
-		/*TODO: Switch command to RW2*/
-	}
-	if (faultType == 2)
-	{
-		/*TODO: Switch sensor reading to FS2*/
-	}
-return;
 }
