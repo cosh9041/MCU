@@ -20,14 +20,13 @@
 //		wheel speed in rad/s. p1 and p2 should be determined by empirical analysis
 //		of reaction wheel friction
 //	-I: Moment of inertia of reaction wheel
-float calcInducedFric(float omega, float p1, float p2, float I)
-{
-	fload induced = p1*omega + p2*5;
+float calcInducedFriction(float omega, float p1, float p2) {
+	float induced = p1*omega + p2*5;
 	return induced; 
 }
 
-float injectFault(int isPrimaryRWactive, int cmdToFaultRW, float tau_c, float omega)
-{
+float injectFault(int isPrimaryRWactive, int cmdToFaultRW, float tau_c, 
+		float omega, float p1, float p2) {
 	/*Definition of Variables*/
 	float tau_hat_c, tau_hat_f;
 	float delta_omega = 0.0001; /*TODO: Subject to change dependent on tolerances*/
@@ -41,7 +40,7 @@ float injectFault(int isPrimaryRWactive, int cmdToFaultRW, float tau_c, float om
 		}
 		else 
 		{
-			tau_hat_f = calcInducedFric(omega); /*Calculate induced friction*/
+			tau_hat_f = calcInducedFriction(omega, p1, p2); /*Calculate induced friction*/
 			tau_hat_c = tau_c - tau_hat_f; /*Add induced friction into the commanded torque to appear as fault*/
 		}
 	}

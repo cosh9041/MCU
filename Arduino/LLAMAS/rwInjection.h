@@ -12,9 +12,10 @@
 extern "C" {
 #endif
 
-float calcInducedFric(float omega);
+float calcInducedFriction(float omega, float p1, float p2);
 
-float injectFault(int isPrimaryRWactive, int cmdToFaultRW, float tau_c, float omega);
+float injectFault(int isPrimaryRWactive, int cmdToFaultRW, float tau_c, 
+		float omega, float p1, float p2);
 
 #ifdef __cplusplus
 }
