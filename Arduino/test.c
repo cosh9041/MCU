@@ -1,8 +1,8 @@
 #include <stdio.h>
 //#include "LLAMAS/faultManagement.h"
 //#include "LLAMAS/rwInjection.h"
-#include "recovery.h"
-#include "rwInjection.h"
+#include "LLAMAS/recovery.h"
+#include "LLAMAS/rwInjection.h"
 
 //TODO: recovery seems to be doing some really trivial shit. Let's revisit this
 // and see if it's really necessary
