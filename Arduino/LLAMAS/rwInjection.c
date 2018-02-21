@@ -12,10 +12,18 @@
 #include "rwInjection.h"
 
 
-
-float calcInducedFric(float omega)
+// Calculates the induced friction of a reaction wheel as a function of the natural friction
+// Variables [All units are SI units]:
+//	-omega: Reaction wheel speed 
+//	-p1 & p2: polynomial coefficients that yield an approximation polynominal 
+//		for the nominal friction of the form f(x) = p1*x + p2, where x is the 
+//		wheel speed in rad/s. p1 and p2 should be determined by empirical analysis
+//		of reaction wheel friction
+//	-I: Moment of inertia of reaction wheel
+float calcInducedFric(float omega, float p1, float p2, float I)
 {
-	return 5; /*TODO: need to complete function later*/
+	fload induced = p1*omega + p2*5;
+	return induced; 
 }
 
 float injectFault(int isPrimaryRWactive, int cmdToFaultRW, float tau_c, float omega)
