@@ -2,11 +2,9 @@
  * rwInjection.c
  *
  * Created: 1/29/2018 2:41:34 PM
- * Author : Pol Sieira
+ * Author(s) : Pol Sieira & Corwin Sheahan
  */ 
 
-#include <stdio.h>
-#include <stdlib.h>
 #include "rwInjection.h"
 
 
@@ -23,28 +21,29 @@ float calcInducedFriction(float omega, float p1, float p2) {
 	return induced; 
 }
 
-float injectFault(int isPrimaryRWactive, int cmdToFaultRW, float tau_c, 
-		float omega, float p1, float p2) {
-	/*Definition of Variables*/
-	float tau_hat_c, tau_hat_f;
-	float delta_omega = 0.0001; /*TODO: Subject to change dependent on tolerances*/
+// returns an injected torque value:
+// Variables [All units are SI units]:
+//	-isPrimaryRWactive: Should be 1 if primary reaction wheel is active, 0 otherwise
+float injectFault(unsigned char isPrimaryRWactive, unsigned char cmdToFaultRW, float tau_c, 
+		float omega, float p1, float p2, float delta_omega) {
 
-	/*Check if we are command to fault and that command is given to the primary reaction wheel*/
-	if (isPrimaryRWactive == 1 && cmdToFaultRW == 1)
-	{
-		if (omega < delta_omega && omega > -delta_omega)
-		{
-			tau_hat_c = 0; /* Determine if the motor is spinning too slowly and if it is set commanded torque to zero */
-		}
-		else 
-		{
-			tau_hat_f = calcInducedFriction(omega, p1, p2); /*Calculate induced friction*/
-			tau_hat_c = tau_c - tau_hat_f; /*Add induced friction into the commanded torque to appear as fault*/
+	float tau_hat_c, tau_hat_f;
+	if (isPrimaryRWactive && cmdToFaultRW) {
+		if (omega < delta_omega && omega > -delta_omega) {
+		  // If the reaction wheel speed is close to 0, then we actually want to just 
+		  // turn off the commanded torque. The inclusion of friction could force the
+		  // augmented friction to spin the wheel past 0 and in the opposite direction,
+		  // which is impossible for natural friction to do.
+		  tau_hat_c = 0;  
+		} else {
+			tau_hat_f = calcInducedFriction(omega, p1, p2); 
+			// The commanded torque should be decreased by the 'induced' friction, which
+			// mimics an increase in the natural friction of the reaction wheel
+			tau_hat_c = tau_c - tau_hat_f; 
 		}
 	}
-	else
-	{
-		tau_hat_c = tau_c; /*If not commanded to fault keep commanded torque the same*/
+	else {
+		tau_hat_c = tau_c; 
 	}
 	return tau_hat_c;
 }
