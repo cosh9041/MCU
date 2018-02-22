@@ -1,7 +1,7 @@
 .PHONY: all
 
 CC = gcc
-CFLAGS = -Wall
+CFLAGS = #-Wall
 LFLAGS = -lm
 OBJS = *.o
 CFILES = LLAMAS/*.c
