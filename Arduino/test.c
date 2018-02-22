@@ -1,7 +1,6 @@
+
 #include <stdio.h>
-//#include "LLAMAS/faultManagement.h"
-//#include "LLAMAS/rwInjection.h"
-#include "LLAMAS/recovery.h"
+#include "LLAMAS/faultManagement.h"
 #include "LLAMAS/rwInjection.h"
 
 //TODO: recovery seems to be doing some really trivial shit. Let's revisit this
@@ -53,12 +52,22 @@ void testRWInjection() {
 	}
 }
 
+void testFM() {
+	printf("Testing faultManagement.c...\n");
+	int cmdToRecover = 0;
+	int isRecovering = 0;
+	int faultType = 0;
+	int isFaulted = 0;
+	int faultTimerActive = 0;
+	faultMangement(&cmdToRecover, &isRecovering, &faultType, &isFaulted, &faultTimerActive); 
+}
+
 
 int main(void) {
 	printf("Running unit tests...\n");
-
 	testRecovery();
 	testRWInjection();
+	testFM();
 }
 
 

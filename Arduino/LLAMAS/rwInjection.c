@@ -5,8 +5,6 @@
  * Author : Pol Sieira
  */ 
 
-
-//#include "sam.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "rwInjection.h"

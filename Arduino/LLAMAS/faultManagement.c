@@ -5,24 +5,27 @@
  * Author : Pol Sieira
  */ 
 
-//#include "sam.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "faultManagement.h"
 
-void faultManagement(){
+void faultManagement(int pcmdToRecover, int pisRecovering, int pfaultType, int *pisFaulted, int *faultTimerActive){
 	
-	/*Definition of Variables*/
-	int isFaulted,isRecovering,cmdToRecover,faultType;
+	int cmdToRecover = *pcmdToRecover;
+	int isRecovering = *pisRecovering;
+	int faultType = *pfaultType;
+	int isFaulted = *pisFaulted;
+
 	/*Determine if the system is already faulting. If so, recover, if not continue fault checks shown below*/
 	if (isFaulted == 1)
 	{
 		if (cmdToRecover == 1) /*if system is commanded to recover, begin the recovery sequence*/
 		{
-			cmdToRecover == 0;
+			cmdToRecover = 0;
 			recovery(faultType);
-			isFaulted == 0;
-			isRecovering == 1;
+			isFaulted = 0;
+			isRecovering = 1;
 			return;
 		}		
 		else /*if not, let system fault and return*/
@@ -33,8 +36,8 @@ void faultManagement(){
 	
 	else /*if not faulting, begin fault checks*/
 	{
-		//faultType = faultCheckRW();
-		//faultType = faultCheckFS();	
+		faultType = faultCheck();
+
 		if (faultType != 0) /*if faulted, faultType = 1 for RW fault and faultType = 2 for FS fault*/
 		{
 			if (isRecovering == 1) /*if currently recovering, return and let system recover*/
@@ -43,7 +46,7 @@ void faultManagement(){
 			}
 			else /*if not recovering yet, act dependent on what type of fault it is*/
 			{
-				isFaulted == 1;
+				isFaulted = 1;
 				/*TODO: Function to Alert GSU Function here*/
 				if (faultType == 2)
 				{
@@ -59,7 +62,7 @@ void faultManagement(){
 		{	
 			if (isRecovering == 1)
 			{
-				isRecovering == 0;
+				isRecovering = 0;
 				return;
 			}	
 			else
@@ -117,3 +120,25 @@ int faultCheck()
 	}
 	return 0;
 }
+
+int recovery(int faultType)
+{
+	if (faultType == 0)
+	{
+		return 0;
+	} 
+	if (faultType == 1)
+	{
+		return 1;
+	}
+	if (faultType == 2)
+	{
+		return 2;
+	}
+	else
+	{
+		return 10;
+	}
+}
+
+
