@@ -10,67 +10,58 @@
 #include <stdlib.h>
 #include "faultManagement.h"
 
-void faultManagement(int pcmdToRecover, int pisRecovering, int pfaultType, int *pisFaulted, int *faultTimerActive){
-	
-	int cmdToRecover = *pcmdToRecover;
-	int isRecovering = *pisRecovering;
-	int faultType = *pfaultType;
-	int isFaulted = *pisFaulted;
+void faultManagement(int* cmdToRecover, int* isRecovering, int* faultType, 
+		int* isFaulted, int*cker faultTimerActive){
 
-	/*Determine if the system is already faulting. If so, recover, if not continue fault checks shown below*/
-	if (isFaulted == 1)
-	{
-		if (cmdToRecover == 1) /*if system is commanded to recover, begin the recovery sequence*/
-		{
-			cmdToRecover = 0;
-			recovery(faultType);
-			isFaulted = 0;
-			isRecovering = 1;
-			return;
+	// *isFaulted is 1 when the system is already in a faulted state
+	if (*isFaulted == 1) {
+		// *cmdToRecover will be 1 when the system is commanded to initiate recovery 
+		// from the GSU. The setting of this bit is handled by the communication 
+		// handlers
+		if (*cmdToRecover == 1) {
+			// When commanded to recover, we want to initiate recovery
+			*cmdToRecover = 0;
+			recovery(*faultType);
+			*isFaulted = 0;
+			*isRecovering = 1;
 		}		
-		else /*if not, let system fault and return*/
+		// If we're not commanded to recover, we let the system keep faulting
+		return;
+	}
+	
+	faultType = faultCheck();
+
+	if (faultType != 0) {
+		if (isRecovering == 1) /*if currently recovering, return and let system recover*/
 		{
 			return;
 		}
-	}
-	
-	else /*if not faulting, begin fault checks*/
-	{
-		faultType = faultCheck();
-
-		if (faultType != 0) /*if faulted, faultType = 1 for RW fault and faultType = 2 for FS fault*/
+		else /*if not recovering yet, act dependent on what type of fault it is*/
 		{
-			if (isRecovering == 1) /*if currently recovering, return and let system recover*/
+			isFaulted = 1;
+			/*TODO: Function to Alert GSU Function here*/
+			if (faultType == 2)
 			{
 				return;
 			}
-			else /*if not recovering yet, act dependent on what type of fault it is*/
-			{
-				isFaulted = 1;
-				/*TODO: Function to Alert GSU Function here*/
-				if (faultType == 2)
-				{
-					return;
-				}
-				else
-				{
-					return;
-				}
-			}
-		}	
-		if (faultType == 0) /*if no fault, leave recovery and begin nominal operation and fault checks*/
-		{	
-			if (isRecovering == 1)
-			{
-				isRecovering = 0;
-				return;
-			}	
 			else
 			{
 				return;
 			}
+		}
+	}	
+	if (faultType == 0) /*if no fault, leave recovery and begin nominal operation and fault checks*/
+	{	
+		if (isRecovering == 1)
+		{
+			isRecovering = 0;
+			return;
 		}	
-	}
+		else
+		{
+			return;
+		}
+	}	
 }
 
 int checkThreshold()
@@ -120,6 +111,7 @@ int faultCheck()
 	}
 	return 0;
 }
+	{
 
 int recovery(int faultType)
 {
