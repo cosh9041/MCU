@@ -13,7 +13,14 @@
 extern "C" {
 #endif
 
-void faultManagement(int *pcmdToRecover, int *pisRecovering, int *pfaultType, int *isFaulted, int *FaultTimerActive);
+
+void faultManagement(int* isFaulted, int* isRecovering, int* faultType, 
+		int* cmdToRecover, int* faultTimerActive);
+
+void manageNewFaultDetected(int* isFaulted, int* faultType);
+
+void manageFaultAlreadyDetected(int *isFaulted, int *cmdToRecover,
+								int *isRecovering);
 
 int checkThreshold();
 

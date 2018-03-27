@@ -112,7 +112,7 @@ void testFM() {
 	int faultType = 0;
 	int isFaulted = 0;
 	int faultTimerActive = 0;
-	faultMangement(&cmdToRecover, &isRecovering, &faultType, &isFaulted, &faultTimerActive); 
+	//faultMangement(&cmdToRecover, &isRecovering, &faultType, &isFaulted, &faultTimerActive); 
 }
 
 
