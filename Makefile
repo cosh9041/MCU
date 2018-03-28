@@ -4,9 +4,9 @@ CC = gcc
 CFLAGS = #-Wall
 LFLAGS = -lm
 OBJS = *.o
-CFILES = LLAMAS/*.c
+CFILES = libraries/LLAMAS/*.c
 TESTFILE = test.c
-HFILES = LLAMAS/*.h
+HFILES = libraries/LLAMAS/*.h
 TESTMAIN = test
 
 
