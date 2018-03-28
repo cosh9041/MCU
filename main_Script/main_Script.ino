@@ -1,6 +1,7 @@
 #include <Servo.h> 
 Servo myservo;
 
+#include <faultManagement.h>
 #include <SPI.h>  
 #include <Pixy.h>
 #include <PID_v1.h>
