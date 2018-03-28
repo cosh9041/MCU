@@ -42,6 +42,7 @@ void manageNewFaultDetected(int* isFaulted, int* faultType) {
 
 void manageFaultAlreadyDetected(int *isFaulted, int *cmdToRecover,
 								int *isRecovering) {
+
 	// *cmdToRecover will be 1 when the system is commanded to initiate recovery
 	// from the GSU. The setting of this bit is handled by the communication
 	// handlers
@@ -115,3 +116,5 @@ int recovery(int faultType)
 		return 10;
 	}
 }
+
+
