@@ -11,7 +11,7 @@ Servo myservo;
 
 
 #define PWM_FREQ1  6600
-#define PWM_FREQ2  6000
+#define PWM_FREQ2  6600
 
 DuePWM pwm( PWM_FREQ1, PWM_FREQ2 );
 
@@ -31,8 +31,6 @@ void setup()
   digitalWrite(27,LOW);
   Serial.begin(9600);
   Serial.print("Starting...\n");
-  myservo.attach(9);
-  pinMode(9,OUTPUT);
   pixy.init();
   Setpoint = 0;
   //turn the PID on
@@ -53,11 +51,12 @@ void setup()
   digitalWrite(27,HIGH);
 
   
-} 
+}
 
-double j = 170;
+//conversions for torques to PWM bins
 double mNm_to_mA = 1000.0/8.4;
-double mA_to_duty = 80.0/1800.0;
+double mA_to_duty = 80.0/1000.0;
+double duty_to_bin = 256.0/100.0;
 double pwm_duty;
 double offset = 50;
 double pwm_duty2;
@@ -66,20 +65,18 @@ static int i = 0;
 int k;
 char buf[32];
 uint16_t blocks;     
-double conversion;  
+double conversion = 0.0522;//Pixel to degrees ratio. 0.2748 for coarse 0.0522 for fine;  
 
 void loop() 
 {
 //BEGIN PIXY INTEGRATION
 
-  digitalWrite(47,LOW);    
+  digitalWrite(46,LOW);    
   blocks = pixy.getBlocks();    // grab blocks!
   
   // If there are detect blocks, print them!
   if (blocks)
   {
-      //0.28 for coarse 0.00398 for fine;
-      conversion = 0.2748;//0.2748 for coarse 0.0398 for fine;
       //Get input and adjust to degrees. Note that the 0.0398 value is for the fine lens
     Input = (pixy.blocks[0].x)*conversion;
 //      //Set center to 0
@@ -88,7 +85,7 @@ void loop()
     Input *= 3.1415926535897932384626433832795/180;
       // Use PID LAW
        myPID.Compute();
-       pwm_duty = (Output*30*mNm_to_mA*mA_to_duty+offset)/100.0*256.0;
+       pwm_duty = (Output*15*mNm_to_mA*mA_to_duty+offset)*duty_to_bin;
       if (pwm_duty >230){
         pwm_duty = 230;
       }
@@ -123,16 +120,10 @@ void loop()
     Serial.print(buf);
 //    for (k=0; k<blocks; k++)
 //      {
-//        sprintf(buf, "  block %d: ", j);
+//        sprintf(buf, "  block %d: ", k);
 //        Serial.print(buf); 
 //        pixy.blocks[k].print();
       }
 //    }
-  }  
-
-
-
-
-  
-  
+  }   
 }
