@@ -4,9 +4,9 @@ CC = gcc
 CFLAGS = #-Wall
 LFLAGS = -lm
 OBJS = *.o
-CFILES = libraries/LLAMAS/*.c
+CFILES = libraries/fault_sdk/*.c
 TESTFILE = test.c
-HFILES = libraries/LLAMAS/*.h
+HFILES = libraries/fault_sdk/*.h
 TESTMAIN = test
 
 
