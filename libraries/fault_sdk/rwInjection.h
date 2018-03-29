@@ -14,7 +14,7 @@ extern "C" {
 
 float calcInducedFriction(float omega, float p1, float p2);
 
-float injectFault(unsigned char isPrimaryRWactive, unsigned char cmdToFaultRW, float tau_c, 
+float injectRWFault(unsigned char isPrimaryRWactive, unsigned char cmdToFaultRW, float tau_c, 
 		float omega, float p1, float p2, float delta_omega);
 
 #ifdef __cplusplus
