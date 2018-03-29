@@ -71,10 +71,13 @@ float const convertDegToRad = 3.1415926535897932384626433832795/180;
 // Fault status "bits" as uint8_t since c doesn't support bools (c++ does, but not c)
 // (note: uint8_t *should* be the same as unsigned char)
 uint8_t isPrimaryRWactive; 
+uint8_t isPrimaryFSActive;
 uint8_t cmdToFaultRW; // 0 if no command to fault, otherwise 1. Should be set only by comms
 uint8_t isFaulted;
 uint8_t isRecovering;
 uint8_t faultType; // 0 if no fault, 1 if fine sensor fault, 2 if coarse sensor fault
+uint8_t cmdToRecover;
+uint8_t faultTimerActive;
 float rwSpeedRad; 
 float const p1 = 10.0; // TODO: p1 and p2 need to be set via data from Dalton. These are just placeholders
 float const p2 = 10.0; 
@@ -91,7 +94,8 @@ void loop()
     deltaThetaRad = deltaThetaRadFine1;
 
     // TODO: fault timer
-    faultManagement(&isFaulted, &isRecovering, &faultType, &cmdToRecover, &faultTimerActive);
+    faultManagement(&isFaulted, &isRecovering, &faultType, &cmdToRecover, &faultTimerActive,
+      &isPrimaryRWactive, &isPrimaryFSActive);
 
     // call to Compute assigns output to variable commandedTorque_mNm via pointers
     myPID.Compute(); 

@@ -10,8 +10,8 @@
 #include <stdlib.h>
 #include "faultManagement.h"
 
-void faultManagement(int *isFaulted, int *isRecovering, int *faultType, 
-		int *cmdToRecover, int *faultTimerActive, int *isPrimaryRWActive, int *isPrimaryFSActive) {
+void faultManagement(unsigned char *isFaulted, unsigned char *isRecovering, unsigned char *faultType, 
+		unsigned char *cmdToRecover, unsigned char *faultTimerActive, unsigned char *isPrimaryRWActive, unsigned char *isPrimaryFSActive) {
 	if (*isFaulted) {
 		manageFaultAlreadyDetected(isFaulted, cmdToRecover, isRecovering);
 		return;
@@ -30,7 +30,7 @@ void faultManagement(int *isFaulted, int *isRecovering, int *faultType,
 	manageNewFaultDetected(isFaulted, faultType, isPrimaryRWActive, isPrimaryFSActive);
 }
 
-void manageNewFaultDetected(int *isFaulted, int *faultType, int *isPrimaryRWActive, int *isPrimaryFSActive) {
+void manageNewFaultDetected(unsigned char *isFaulted, unsigned char *faultType, unsigned char *isPrimaryRWActive, unsigned char *isPrimaryFSActive) {
 	*isFaulted = 1;
 	/*TODO: Function to Alert GSU Function here*/
 	//alertGSU(faultType);
@@ -43,8 +43,8 @@ void manageNewFaultDetected(int *isFaulted, int *faultType, int *isPrimaryRWActi
 	}
 }
 
-void manageFaultAlreadyDetected(int *isFaulted, int *cmdToRecover,
-								int *isRecovering) {
+void manageFaultAlreadyDetected(unsigned char *isFaulted, unsigned char *cmdToRecover,
+								unsigned char *isRecovering) {
 	// *cmdToRecover will be 1 when the system is commanded to initiate recovery
 	// from the GSU. The setting of this bit is handled by the communication
 	// handlers
@@ -57,14 +57,14 @@ void manageFaultAlreadyDetected(int *isFaulted, int *cmdToRecover,
 	*isRecovering = 1;
 }
 
-int checkThreshold()
+unsigned char checkThreshold()
 {
 	return 0; /*TODO: Change to actual threshold checking method*/
 }
 
 
-int faultCheckRW(int *faultType) {
-	int faultDetected, faultTimerActive;
+unsigned char faultCheckRW(unsigned char *faultType) {
+	unsigned char faultDetected, faultTimerActive;
 	
 	/*Run threshold check*/
 	//faultDetected = checkThreshold(); //TODO: Impl check threshold w/ data. Tune for run time perf
@@ -99,7 +99,7 @@ int faultCheckRW(int *faultType) {
 	return 0;
 }
 
-int recovery(int faultType)
+unsigned char recovery(unsigned char faultType)
 {
 	if (faultType == 0)
 	{

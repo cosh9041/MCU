@@ -14,21 +14,21 @@ extern "C" {
 #endif
 
 
-void faultManagement(int *isFaulted, int *isRecovering, int *faultType, 
-		int *cmdToRecover, int *faultTimerActive, 
-		int *isPrimaryRWActive, int *isPrimaryFSActive);
+void faultManagement(unsigned char *isFaulted, unsigned char *isRecovering, unsigned char *faultType, 
+		unsigned char *cmdToRecover, unsigned char *faultTimerActive, 
+		unsigned char *isPrimaryRWActive, unsigned char *isPrimaryFSActive);
 
-void manageNewFaultDetected(int *isFaulted, int *faultType, int *isPrimaryRWActive, 
-	int *isPrimaryFSActive);
+void manageNewFaultDetected(unsigned char *isFaulted, unsigned char *faultType, unsigned char *isPrimaryRWActive, 
+	unsigned char *isPrimaryFSActive);
 
-void manageFaultAlreadyDetected(int *isFaulted, int *cmdToRecover,
-								int *isRecovering);
+void manageFaultAlreadyDetected(unsigned char *isFaulted, unsigned char *cmdToRecover,
+								unsigned char *isRecovering);
 
-int checkThreshold();
+unsigned char checkThreshold();
 
-int faultCheck();
+unsigned char faultCheck();
 
-int recovery(int faultType);
+unsigned char recovery(unsigned char faultType);
 
 #ifdef __cplusplus
 }
