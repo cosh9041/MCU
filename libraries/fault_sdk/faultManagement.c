@@ -10,9 +10,8 @@
 #include <stdlib.h>
 #include "faultManagement.h"
 
-void faultManagement(int* isFaulted, int* isRecovering, int* faultType, 
-		int* cmdToRecover, int* faultTimerActive) {
-
+void faultManagement(int *isFaulted, int *isRecovering, int *faultType, 
+		int *cmdToRecover, int *faultTimerActive, int *isPrimaryRWActive, int *isPrimaryFSActive) {
 	if (*isFaulted) {
 		manageFaultAlreadyDetected(isFaulted, cmdToRecover, isRecovering);
 		return;
@@ -22,21 +21,25 @@ void faultManagement(int* isFaulted, int* isRecovering, int* faultType,
 	//faultCheckFS(); TODO: Impl fault check fs
 
 	/* faultType will be 0 if there is no fault, 1 if fs fault, 2 if RW*/
-	if (!faultType) {
+	if (!(*faultType)) {
 		*isRecovering = 0; 
 		return; 
 	}
 
-	if (isRecovering) return;
+	if (*isRecovering) return;
+	manageNewFaultDetected(isFaulted, faultType, isPrimaryRWActive, isPrimaryFSActive);
 }
 
-void manageNewFaultDetected(int* isFaulted, int* faultType) {
+void manageNewFaultDetected(int *isFaulted, int *faultType, int *isPrimaryRWActive, int *isPrimaryFSActive) {
 	*isFaulted = 1;
 	/*TODO: Function to Alert GSU Function here*/
 	//alertGSU(faultType);
-	if (*faultType == 2) {
-		//TODO shut off primary reaction wheel control. 
-		// We should probably implement a shutOffPrimaryRW func
+	switch(*faultType) {
+		case 2:  // RW fault. turn off command to RW 1 to allow for visible deterioration of control
+			*isPrimaryRWActive = 0;
+			break;
+		case 1: break; // FS fault. In this case, we do nothing
+		default: break;
 	}
 }
 
