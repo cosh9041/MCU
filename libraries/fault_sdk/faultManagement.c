@@ -63,7 +63,7 @@ int checkThreshold()
 }
 
 
-int faultCheckRW(int* faultType) {
+int faultCheckRW(int *faultType) {
 	int faultDetected, faultTimerActive;
 	
 	/*Run threshold check*/

@@ -14,10 +14,12 @@ extern "C" {
 #endif
 
 
-void faultManagement(int* isFaulted, int* isRecovering, int* faultType, 
-		int* cmdToRecover, int* faultTimerActive);
+void faultManagement(int *isFaulted, int *isRecovering, int *faultType, 
+		int *cmdToRecover, int *faultTimerActive, 
+		int *isPrimaryRWActive, int *isPrimaryFSActive);
 
-void manageNewFaultDetected(int* isFaulted, int* faultType);
+void manageNewFaultDetected(int *isFaulted, int *faultType, int *isPrimaryRWActive, 
+	int *isPrimaryFSActive);
 
 void manageFaultAlreadyDetected(int *isFaulted, int *cmdToRecover,
 								int *isRecovering);
