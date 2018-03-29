@@ -2,6 +2,7 @@
 Servo myservo;
 
 #include <faultManagement.h>
+#include <rwInjection.h>
 #include <SPI.h>  
 #include <Pixy.h>
 #include <PID_v1.h>
@@ -17,13 +18,14 @@ DuePWM pwm( PWM_FREQ1, PWM_FREQ2 );
 
 Pixy pixy;
 
-
 //Define Variables we'll be connecting to
+double deltaThetaRadFine1, deltaThetaRadFine2;
+double deltaThetaRadCoarse1, deltaThetaRadCoarse2;
 double Setpoint, deltaThetaRad, commandedTorque_mNm;
 
 //Specify the links and initial tuning parameters
-double Kp=0.4193213777, Ki=0.003150323227, Kd=12.61957147, N=0.155;
-PID myPID(&deltaThetaRad, &commandedTorque_mNm, &Setpoint, Kp, Ki, Kd,N, DIRECT);
+double const Kp=0.4193213777, Ki=0.003150323227, Kd=12.61957147, N=0.155;
+PID myPID(&deltaThetaRad, &commandedTorque_mNm, &Setpoint, Kp, Ki, Kd, N, DIRECT);
 
 void setup() 
 { 
@@ -42,7 +44,7 @@ void setup()
   pwm.pinFreq1( 6 );  // Pin 6 freq set to "pwm_freq1" on clock A
   pwm.pinFreq2( 7 );  // Pin 7 freq set to "pwm_freq2" on clock B
 
-  //Select Inital Pixy
+  //Select Initial Pixy
   digitalWrite(46,HIGH);
 
   //Enable Cycle
@@ -61,10 +63,22 @@ static int i = 0;
 int k;
 char buf[32];
 uint16_t blocks;     
-double const convertPixToDegCoarse = 0.2748;
-double const convertPixToDegFine = 0.0522;
-double const centerOffsetDegCoarse = 160*convertPixToDegCoarse;
-double const convertDegToRad = 3.1415926535897932384626433832795/180;
+float const convertPixToDegCoarse = 0.2748;
+float const convertPixToDegFine = 0.0522;
+float const centerOffsetDegCoarse = 160*convertPixToDegCoarse;
+float const convertDegToRad = 3.1415926535897932384626433832795/180;
+
+// Fault status "bits" as uint8_t since c doesn't support bools (c++ does, but not c)
+// (note: uint8_t *should* be the same as unsigned char)
+uint8_t isPrimaryRWactive; 
+uint8_t cmdToFaultRW; // 0 if no command to fault, otherwise 1. Should be set only by comms
+uint8_t isFaulted;
+uint8_t isRecovering;
+uint8_t faultType; // 0 if no fault, 1 if fine sensor fault, 2 if coarse sensor fault
+float rwSpeedRad; 
+float const p1 = 10.0; // TODO: p1 and p2 need to be set via data from Dalton. These are just placeholders
+float const p2 = 10.0; 
+float delta_omega; // small delta near zero where we set torque to zero to simulate friction. TODO: Tune this value
 
 void loop() 
 {
@@ -73,10 +87,18 @@ void loop()
   
   if (blocks)
   {
-    deltaThetaRad = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegCoarse)*convertDegToRad;
+    deltaThetaRadFine1 = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegCoarse)*convertDegToRad;
+    deltaThetaRad = deltaThetaRadFine1;
+
+    // TODO: fault timer
+    faultManagement(&isFaulted, &isRecovering, &faultType, &cmdToRecover, &faultTimerActive);
 
     // call to Compute assigns output to variable commandedTorque_mNm via pointers
     myPID.Compute(); 
+
+    // TODO: Test injection strength and tune for delta_omega
+    commandedTorque_mNm = injectRWFault(isPrimaryRWactive, cmdToFaultRW, commandedTorque_mNm, 
+      rwSpeedRad, p1, p2, delta_omega);
 
     pwm_duty = (commandedTorque_mNm*15*mNm_to_mA*mA_to_duty + pwmOffset)*duty_to_bin;
 
