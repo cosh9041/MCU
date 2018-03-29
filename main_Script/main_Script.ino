@@ -11,7 +11,7 @@ Servo myservo;
 
 
 #define PWM_FREQ1  6600
-#define PWM_FREQ2  6000
+#define PWM_FREQ2  6600
 
 DuePWM pwm( PWM_FREQ1, PWM_FREQ2 );
 
@@ -30,8 +30,6 @@ void setup()
   digitalWrite(27,LOW);
   Serial.begin(9600);
   Serial.print("Starting...\n");
-  myservo.attach(9);
-  pinMode(9,OUTPUT);
   pixy.init();
   Setpoint = 0;
   //turn the PID on
@@ -51,39 +49,36 @@ void setup()
   digitalWrite(27,HIGH);
 } 
 
-double j = 170;
+//conversions for torques to PWM bins
 double mNm_to_mA = 1000.0/8.4;
-double mA_to_duty = 80.0/1800.0;
+double mA_to_duty = 80.0/1000.0;
+double duty_to_bin = 256.0/100.0;
 double pwm_duty;
-double offset = 50;
+double pwmOffset = 50;
 double pwm_duty2;
 uint32_t pwm_duty3;
 static int i = 0;
 int k;
 char buf[32];
 uint16_t blocks;     
-double convertPixToDegCoarse = 0.2748;
-double convertPixToDegFine = 0.0398;
-double centerOffsetDegCoarse = 160*convertPixToDegCoarse;
-double convertDegToRad = 3.1415926535897932384626433832795/180;
-//int isFaulted;
+double const convertPixToDegCoarse = 0.2748;
+double const convertPixToDegFine = 0.0522;
+double const centerOffsetDegCoarse = 160*convertPixToDegCoarse;
+double const convertDegToRad = 3.1415926535897932384626433832795/180;
 
 void loop() 
 {
-  digitalWrite(47,LOW);
+  digitalWrite(46,LOW);
   blocks = pixy.getBlocks();
   
   if (blocks)
   {
-   //faultManagement(&isFaulted, &isRecovering, &faultType, &cmdToRecover, &faultTimerActive);
-
-    deltaThetaRad = ((pixy.blocks[0].x)*convertPixToDegCoarse - centerOffsetDegCoarse)*convertDegToRad;
+    deltaThetaRad = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegCoarse)*convertDegToRad;
 
     // call to Compute assigns output to variable commandedTorque_mNm via pointers
     myPID.Compute(); 
 
-    // TODO: would be smart to parameterize these conversion factors so they are self-evident
-    pwm_duty = (commandedTorque_mNm*30*mNm_to_mA*mA_to_duty+offset)/100.0*256.0;
+    pwm_duty = (commandedTorque_mNm*15*mNm_to_mA*mA_to_duty + pwmOffset)*duty_to_bin;
 
     if (pwm_duty >230){
       pwm_duty = 230;
@@ -124,7 +119,7 @@ void loop()
     // TODO: Do we need these lines?
 //    for (k=0; k<blocks; k++)
 //      {
-//        sprintf(buf, "  block %d: ", j);
+//        sprintf(buf, "  block %d: ", k);
 //        Serial.print(buf); 
 //        pixy.blocks[k].print();
     }
