@@ -123,4 +123,23 @@ int main(void) {
 	testFM();
 }
 
+ // if (currentIndex%11 == 0) {
+  //   for (int i = 0; i < lengthOfHistory-1; i++) {
+  //     Serial.print(orderedRWSpeedHistory[i]);
+  //     Serial.print("\n");
+  //     Serial.print(orderedTimeStampHistory[i]);
+  //     Serial.print("\n");
+  //     Serial.print(angularAccel[i]);
+  //     Serial.print("\n");
+  //     delay(2000);
+  //   }
+  //   for (int i = 0; i < lengthOfHistory; i++) {
+  //     Serial.print(commandedTorqueHistory[i]);
+  //     Serial.print("\n");
+  //   }
+  //   delay(5000);
+  // }
+
+
+
 

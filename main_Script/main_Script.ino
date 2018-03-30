@@ -3,6 +3,7 @@ Servo myservo;
 
 #include <faultManagement.h>
 #include <rwInjection.h>
+#include <data_util.h>
 #include <SPI.h>  
 #include <Pixy.h>
 #include <PID_v1.h>
@@ -32,7 +33,7 @@ void setup()
   digitalWrite(27,LOW);
   Serial.begin(9600);
   Serial.print("Starting...\n");
-  //pixy.init();
+  pixy.init();
   Setpoint = 0;
   //turn the PID on
   myPID.SetMode(AUTOMATIC);
@@ -81,56 +82,20 @@ float rwSpeedRad;
 float const p1 = 10.0; // TODO: p1 and p2 need to be set via data from Dalton. These are just placeholders
 float const p2 = 10.0; 
 float delta_omega; // small delta near zero where we set torque to zero to simulate friction. TODO: Tune this value
-uint16_t const lengthOfHistory = 100;
+uint16_t const lengthOfHistory = 1000;
 // currentIndex points to the most recent data point. The last 100 data points are accumulated "behind"
 // this index. For example, if the currentIndex is 55, the order (in terms of recency) of the stored indicies
 // is 55....0...99...56. I.e. the most recently stored index is 55 (just stored), and the oldest stored index is 56.
 uint16_t currentIndex = 0;
 
-//TODO: Determine units and ideal length for these. commanded
+//TODO: Determine units and ideal length for these. 
 float commandedTorqueHistory[lengthOfHistory];
 float reactionWheelSpeedHistory[lengthOfHistory];
 float timeStampHistory[lengthOfHistory];
-
-void storeRWSpeed(uint16_t index, float rwSpeed, float timeStamp) {
-  reactionWheelSpeedHistory[index] = rwSpeed;
-  timeStampHistory[index] = timeStamp;
-}
-
-void storeTorqueAndIncrementIndex(uint16_t *index, float commandedTorque_mNm) {
-  *index += 1;
-  if (*index == lengthOfHistory) *index = 0;
-  commandedTorqueHistory[*index] = commandedTorque_mNm;
-}
-
-// Stores the last n = `length` data points from `data` in a destination array in a time ordered fashion
-// currentIndex points to the most recent data point. The last n = `length` data points are accumulated "behind"
-// this index. For example, if the currentIndex is 55, the order (in terms of recency) of the stored indicies
-// is 55....0...99...56. I.e. the most recently stored index is 55 (just stored), and the oldest stored index is 56.
-void getHistory(float *data, float *destination, uint16_t length, uint16_t index) {
-  uint16_t historyIndex = 0;
-  for (int32_t i = index; i >= 0; i--) {
-    destination[historyIndex] = data[i];
-    historyIndex++;
-  }
-  for (i = (length - 1); i > index; i--) {
-    destination[historyIndex] = data[i];
-    historyIndex++;
-  }
-}
-
-// Performs numerical differentiation to determine angular acceleration 
-// by taking the difference of omega / difference of t
-void getAngularAcceleration(float *omega, float *t, float *alpha, uint16_t length) {
-  float omegaDiff;
-  float tDiff;
-  for (int i = 0; i < length-1; i++) {
-    omegaDiff = omega[i+1] - omega[i];
-    tDiff = t[i+1] - t[i];
-    if (tDiff != 0)
-      alpha[i] = omegaDiff / tDiff;
-  }
-}
+float orderedRWSpeedHistory[lengthOfHistory];
+float orderedCommandedTorqueHistory[lengthOfHistory];
+float orderedTimeStampHistory[lengthOfHistory];
+float angularAccel[lengthOfHistory-1];
 
 float mockRWSpeed = 0.0;
 float mockTimeStamp = 0.0;
@@ -138,37 +103,30 @@ float mockCommandTorque = 0.4;
 
 void loop() 
 {
-  storeRWSpeed(currentIndex, mockRWSpeed, mockTimeStamp);
-
-  float orderedRWSpeedHistory[lengthOfHistory];
-  float orderedCommandedTorqueHistory[lengthOfHistory];
-  float orderedTimeStampHistory[lengthOfHistory];
-  float angularAccel[lengthOfHistory-1];
+  // Log RW speed.
+  storeRWSpeed(reactionWheelSpeedHistory, timeStampHistory, currentIndex, mockRWSpeed, mockTimeStamp);
 
   // Stores ordered lists of last n = `lengthOfHistory` data points, with most recent being at index 0
-  getHistory(reactionWheelSpeedHistory, orderedRWSpeedHistory, lengthOfHistory, currentIndex);
-  getHistory(commandedTorqueHistory, orderedCommandedTorqueHistory, lengthOfHistory, currentIndex);
-  getHistory(timeStampHistory, orderedTimeStampHistory, lengthOfHistory, currentIndex);
+  getOrderedHistory(reactionWheelSpeedHistory, orderedRWSpeedHistory, lengthOfHistory, currentIndex);
+  getOrderedHistory(commandedTorqueHistory, orderedCommandedTorqueHistory, lengthOfHistory, currentIndex);
+  getOrderedHistory(timeStampHistory, orderedTimeStampHistory, lengthOfHistory, currentIndex);
 
   getAngularAcceleration(orderedRWSpeedHistory, orderedTimeStampHistory, angularAccel, lengthOfHistory);
 
-  if (currentIndex%10 == 0) {
-    for (int i = 0; i < lengthOfHistory-1; i++) {
-      Serial.print(angularAccel[i]);
-      Serial.print("\n");
-    }
-    delay(5000);
-  }
+  storeTorqueAndIncrementIndex(commandedTorqueHistory, &currentIndex, mockCommandTorque, lengthOfHistory);
 
-  storeTorqueAndIncrementIndex(&currentIndex, mockCommandTorque);
-  // TODO: Actually get these values and replace mocks in function calls
+  // TODO: Actually get these values and replace mocks in function calls. commandedTorque will come from 
+  // control law. rwSpeed comes from encoder on RW, timeStamp comes from ???
   mockCommandTorque += 0.4;
   mockRWSpeed += 0.1;
   mockTimeStamp += 0.01;
 
   digitalWrite(46,LOW);
-  //blocks = pixy.getBlocks();
   
+  blocks = pixy.getBlocks();// NOTE: TO run on board which is not pixy enabled, comment this line out
+
+  Serial.print("Made it to here!");
+
   if (blocks)
   {
     deltaThetaRadFine1 = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegCoarse)*convertDegToRad;
