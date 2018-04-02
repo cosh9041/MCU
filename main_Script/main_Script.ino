@@ -3,6 +3,7 @@ Servo myservo;
 
 #include <faultManagement.h>
 #include <rwInjection.h>
+#include <fm_util.h>
 #include <data_util.h>
 #include <SPI.h>  
 #include <Pixy.h>
@@ -28,6 +29,9 @@ double Setpoint, deltaThetaRad, commandedTorque_mNm;
 double const Kp=0.4193213777, Ki=0.003150323227, Kd=12.61957147, N=0.155;
 PID myPID(&deltaThetaRad, &commandedTorque_mNm, &Setpoint, Kp, Ki, Kd, N, DIRECT);
 
+FmState base = {.isFaulted = 0};
+FmState *fmState = &base;
+
 void setup() 
 { 
   digitalWrite(27,LOW);
@@ -50,6 +54,8 @@ void setup()
 
   //Enable Cycle
   digitalWrite(27,HIGH);
+
+  initializeFaultState(fmState);
 } 
 
 //conversions for torques to PWM bins
@@ -70,7 +76,7 @@ float const centerOffsetDegCoarse = 160*convertPixToDegCoarse;
 float const convertDegToRad = 3.1415926535897932384626433832795/180;
 
 // Fault status "bits" as uint8_t since c doesn't support bools (c++ does, but not c)
-uint8_t isPrimaryRWactive; 
+uint8_t isPrimaryRWActive; 
 uint8_t isPrimaryFSActive;
 uint8_t cmdToFaultRW; // 0 if no command to fault, otherwise 1. Should be set only by comms
 uint8_t isFaulted;
@@ -87,6 +93,7 @@ uint16_t const lengthOfHistory = 1000;
 // this index. For example, if the currentIndex is 55, the order (in terms of recency) of the stored indicies
 // is 55....0...99...56. I.e. the most recently stored index is 55 (just stored), and the oldest stored index is 56.
 uint16_t currentIndex = 0;
+float MOI = 1; //MOI of RW, stubbed out for now
 
 //TODO: Determine units and ideal length for these. 
 float commandedTorqueHistory[lengthOfHistory];
@@ -123,24 +130,21 @@ void loop()
 
   digitalWrite(46,LOW);
   
-  blocks = pixy.getBlocks();// NOTE: TO run on board which is not pixy enabled, comment this line out
-
-  Serial.print("Made it to here!");
+  //blocks = pixy.getBlocks();// NOTE: TO run on board which is not pixy enabled, comment this line out
 
   if (blocks)
   {
     deltaThetaRadFine1 = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegCoarse)*convertDegToRad;
     deltaThetaRad = deltaThetaRadFine1;
 
-    // TODO: fault timer
-    faultManagement(&isFaulted, &isRecovering, &faultType, &cmdToRecover, &faultTimerActive,
-      &isPrimaryRWactive, &isPrimaryFSActive);
+    faultManagement(fmState, angularAccel, orderedCommandedTorqueHistory,
+		    lengthOfHistory, MOI);
 
     // call to Compute assigns output to variable commandedTorque_mNm via pointers
     myPID.Compute(); 
 
     // TODO: Test injection strength and tune for delta_omega
-    commandedTorque_mNm = injectRWFault(isPrimaryRWactive, cmdToFaultRW, commandedTorque_mNm, 
+    commandedTorque_mNm = injectRWFault(isPrimaryRWActive, cmdToFaultRW, commandedTorque_mNm, 
       rwSpeedRad, p1, p2, delta_omega);
 
     pwm_duty = (commandedTorque_mNm*15*mNm_to_mA*mA_to_duty + pwmOffset)*duty_to_bin;

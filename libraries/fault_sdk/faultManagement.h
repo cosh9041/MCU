@@ -13,22 +13,24 @@
 extern "C" {
 #endif
 
+#include <fm_util.h>
 
-void faultManagement(unsigned char *isFaulted, unsigned char *isRecovering, unsigned char *faultType, 
-		unsigned char *cmdToRecover, unsigned char *faultTimerActive, 
-		unsigned char *isPrimaryRWActive, unsigned char *isPrimaryFSActive);
+void faultManagement(FmState *fmState, float *angularAccel, float *commandedTorque,
+		uint16_t dataLength, float MOI);
 
-void manageNewFaultDetected(unsigned char *isFaulted, unsigned char *faultType, unsigned char *isPrimaryRWActive, 
-	unsigned char *isPrimaryFSActive);
+// void faultManagement(uint8_t *isFaulted, uint8_t *isRecovering, uint8_t *faultType, 
+// 		uint8_t *cmdToRecover, uint8_t *faultTimerActive, uint8_t *isPrimaryRWActive, 
+// 		uint8_t *isPrimaryFSActive, float *angularAccel, float *commandedTorque,
+// 		uint16_t dataLength, float MOI);
 
-void manageFaultAlreadyDetected(unsigned char *isFaulted, unsigned char *cmdToRecover,
-								unsigned char *isRecovering);
+void manageNewFaultDetected(FmState *fmState);
 
+void manageFaultAlreadyDetected(FmState *fmState);
 unsigned char checkThreshold();
 
 unsigned char faultCheck();
 
-unsigned char recovery(unsigned char faultType);
+unsigned char recovery(FmState *fmState);
 
 #ifdef __cplusplus
 }
