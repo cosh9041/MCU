@@ -63,7 +63,7 @@ char buf[32];
 uint16_t blocks;     
 double const convertPixToDegCoarse = 0.2748;
 double const convertPixToDegFine = 0.0522;
-double const centerOffsetDegCoarse = 160*convertPixToDegCoarse;
+double const centerOffsetDegFine = 160*convertPixToDegFine;
 double const convertDegToRad = 3.1415926535897932384626433832795/180;
 
 void loop() 
@@ -73,7 +73,7 @@ void loop()
   
   if (blocks)
   {
-    deltaThetaRad = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegCoarse)*convertDegToRad;
+    deltaThetaRad = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
 
     // call to Compute assigns output to variable commandedTorque_mNm via pointers
     myPID.Compute(); 
