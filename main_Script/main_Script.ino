@@ -70,10 +70,10 @@ static int i = 0;
 int k;
 char buf[32];
 uint16_t blocks;     
-float const convertPixToDegCoarse = 0.2748;
-float const convertPixToDegFine = 0.0522;
-float const centerOffsetDegCoarse = 160*convertPixToDegCoarse;
-float const convertDegToRad = 3.1415926535897932384626433832795/180;
+double const convertPixToDegCoarse = 0.2748;
+double const convertPixToDegFine = 0.0522;
+double const centerOffsetDegFine = 160*convertPixToDegFine;
+double const convertDegToRad = 3.1415926535897932384626433832795/180;
 
 // Fault status "bits" as uint8_t since c doesn't support bools (c++ does, but not c)
 uint8_t isPrimaryRWActive; 
@@ -134,7 +134,7 @@ void loop()
 
   if (blocks)
   {
-    deltaThetaRadFine1 = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegCoarse)*convertDegToRad;
+    deltaThetaRadFine1 = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
     deltaThetaRad = deltaThetaRadFine1;
 
     faultManagement(fmState, angularAccel, orderedCommandedTorqueHistory,
