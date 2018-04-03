@@ -11,4 +11,7 @@ void initializeFaultState(FmState *fmState) {
   fmState->faultTimerActive = 2;
   fmState->isPrimaryRWActive = 0;
   fmState->isPrimaryFSActive = 1;
+  fmState->cmdToFaultRW = 0;
+  fmState->cmdToFaultFS = 0;
+  fmState->fsBias = 10;
 }

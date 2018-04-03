@@ -22,10 +22,10 @@ void faultManagement(FmState *fmState, float *angularAccel, float *commandedTorq
 // 		uint8_t *cmdToRecover, uint8_t *faultTimerActive, uint8_t *isPrimaryRWActive, 
 // 		uint8_t *isPrimaryFSActive, float *angularAccel, float *commandedTorque,
 // 		uint16_t dataLength, float MOI);
-
 void manageNewFaultDetected(FmState *fmState);
 
 void manageFaultAlreadyDetected(FmState *fmState);
+
 unsigned char checkThreshold();
 
 unsigned char faultCheck();
