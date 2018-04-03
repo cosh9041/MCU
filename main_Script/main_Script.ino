@@ -70,6 +70,7 @@ static int i = 0;
 int k;
 char buf[32];
 uint16_t blocks;     
+
 double const convertPixToDegCoarse = 0.2748;
 double const convertPixToDegFine = 0.0522;
 double const centerOffsetDegFine = 160*convertPixToDegFine;
@@ -129,8 +130,8 @@ void loop()
   mockTimeStamp += 0.01;
 
   digitalWrite(46,LOW);
-  
-  //blocks = pixy.getBlocks();// NOTE: TO run on board which is not pixy enabled, comment this line out
+
+  blocks = pixy.getBlocks();// NOTE: TO run on board which is not pixy enabled, comment this line out
 
   if (blocks)
   {

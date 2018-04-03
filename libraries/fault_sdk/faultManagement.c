@@ -48,7 +48,7 @@ void manageFaultAlreadyDetected(FmState *fmState) {
 	// fmState->cmdToRecover will be 1 when the system is commanded to initiate recovery
 	// from the GSU. The setting of this bit is handled by the communication
 	// handlers
-	if (fmState->cmdToRecover)
+	if (!fmState->cmdToRecover)
 		return;
 
 	fmState->cmdToRecover = 0;
