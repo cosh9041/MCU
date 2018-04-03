@@ -29,7 +29,7 @@ double Setpoint, deltaThetaRad, commandedTorque_mNm;
 double const Kp=0.4193213777, Ki=0.003150323227, Kd=12.61957147, N=0.155;
 PID myPID(&deltaThetaRad, &commandedTorque_mNm, &Setpoint, Kp, Ki, Kd, N, DIRECT);
 
-FmState base = {.isFaulted = 0};
+FmState base;
 FmState *fmState = &base;
 
 void setup() 
@@ -76,15 +76,6 @@ double const convertPixToDegFine = 0.0522;
 double const centerOffsetDegFine = 160*convertPixToDegFine;
 double const convertDegToRad = 3.1415926535897932384626433832795/180;
 
-// Fault status "bits" as uint8_t since c doesn't support bools (c++ does, but not c)
-uint8_t isPrimaryRWActive; 
-uint8_t isPrimaryFSActive;
-uint8_t cmdToFaultRW; // 0 if no command to fault, otherwise 1. Should be set only by comms
-uint8_t isFaulted;
-uint8_t isRecovering;
-uint8_t faultType; // 0 if no fault, 1 if fine sensor fault, 2 if coarse sensor fault
-uint8_t cmdToRecover;
-uint8_t faultTimerActive;
 float rwSpeedRad; 
 float const p1 = 10.0; // TODO: p1 and p2 need to be set via data from Dalton. These are just placeholders
 float const p2 = 10.0; 
