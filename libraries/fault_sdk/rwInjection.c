@@ -24,7 +24,7 @@ float calcInducedFriction(float omega, float p1, float p2) {
 // returns an injected torque value:
 // Variables [All units are SI units]:
 //	-isPrimaryRWactive: Should be 1 if primary reaction wheel is active, 0 otherwise
-float injectFault(unsigned char isPrimaryRWactive, unsigned char cmdToFaultRW, float tau_c, 
+float injectRWFault(unsigned char isPrimaryRWactive, unsigned char cmdToFaultRW, float tau_c, 
 		float omega, float p1, float p2, float delta_omega) {
 
 	float tau_hat_c, tau_hat_f;

@@ -47,44 +47,44 @@ void testRWInjection() {
 		didTestFail = 1;
 	}
 
-	printf("Test injectFault...\n");
+	printf("Test injectRWFault...\n");
 	//Test that it doesn't modify when there is not fault to inject
 	unsigned char isPrimaryRWActive = 1;
 	unsigned char cmdToFaultRW = 0;
 	float tau_c = 10.0;
 	float delta_omega = 0.01;
 
-	float tau_c_augmented = injectFault(isPrimaryRWActive, cmdToFaultRW, tau_c,
+	float tau_c_augmented = injectRWFault(isPrimaryRWActive, cmdToFaultRW, tau_c,
 			omega, p1, p2, delta_omega);
 	if (tau_c_augmented != tau_c) {
-		printf("injectFault changed the commanded torque when not commaned to\n");
+		printf("injectRWFault changed the commanded torque when not commaned to\n");
 		didTestFail = 1;
 	}
 
 	//Test that it doesn't modify when the secondary RW is active
 	isPrimaryRWActive = 0;
 	cmdToFaultRW = 1;
-	tau_c_augmented = injectFault(isPrimaryRWActive, cmdToFaultRW, tau_c,
+	tau_c_augmented = injectRWFault(isPrimaryRWActive, cmdToFaultRW, tau_c,
 			omega, p1, p2, delta_omega);
 	if (tau_c_augmented != tau_c) {
-		printf("injectFault changed the commanded torque when secondary RW was active\n");
+		printf("injectRWFault changed the commanded torque when secondary RW was active\n");
 		didTestFail = 1;
 	}
 
 	//Test that returned torque is 0 when omega is less than delta_omega
 	isPrimaryRWActive = 1;
 	omega = 0.009;
-	tau_c_augmented = injectFault(isPrimaryRWActive, cmdToFaultRW, tau_c,
+	tau_c_augmented = injectRWFault(isPrimaryRWActive, cmdToFaultRW, tau_c,
 			omega, p1, p2, delta_omega);
 	if (tau_c_augmented != 0.0) {
-		printf("injectFault did not properly handle small omega case\n");
+		printf("injectRWFault did not properly handle small omega case\n");
 		didTestFail = 1;
 	}
 	omega = -0.009;
-	tau_c_augmented = injectFault(isPrimaryRWActive, cmdToFaultRW, tau_c,
+	tau_c_augmented = injectRWFault(isPrimaryRWActive, cmdToFaultRW, tau_c,
 			omega, p1, p2, delta_omega);
 	if (tau_c_augmented != 0.0) {
-		printf("injectFault did not properly handle small omega case\n");
+		printf("injectRWFault did not properly handle small omega case\n");
 		didTestFail = 1;
 	}
 
@@ -92,11 +92,11 @@ void testRWInjection() {
 	//omega > delta_omega
 	isPrimaryRWActive = 1;
 	omega = 0.1;
-	tau_c_augmented = injectFault(isPrimaryRWActive, cmdToFaultRW, tau_c,
+	tau_c_augmented = injectRWFault(isPrimaryRWActive, cmdToFaultRW, tau_c,
 			omega, p1, p2, delta_omega);
 	float expected_tau_c = tau_c - calcInducedFriction(omega, p1, p2);
 	if (tau_c_augmented != expected_tau_c) {
-		printf("injectFault did not properly augment torque under nominal injection case\n");
+		printf("injectRWFault did not properly augment torque under nominal injection case\n");
 		didTestFail = 1;
 	}
 
@@ -122,5 +122,24 @@ int main(void) {
 	testRWInjection();
 	testFM();
 }
+
+ // if (currentIndex%11 == 0) {
+  //   for (int i = 0; i < lengthOfHistory-1; i++) {
+  //     Serial.print(orderedRWSpeedHistory[i]);
+  //     Serial.print("\n");
+  //     Serial.print(orderedTimeStampHistory[i]);
+  //     Serial.print("\n");
+  //     Serial.print(angularAccel[i]);
+  //     Serial.print("\n");
+  //     delay(2000);
+  //   }
+  //   for (int i = 0; i < lengthOfHistory; i++) {
+  //     Serial.print(commandedTorqueHistory[i]);
+  //     Serial.print("\n");
+  //   }
+  //   delay(5000);
+  // }
+
+
 
 
