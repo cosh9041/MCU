@@ -137,7 +137,7 @@ void loop()
 
     // TODO: Test injection strength and tune for delta_omega
     commandedTorque_mNm = injectRWFault(isPrimaryRWActive, cmdToFaultRW, commandedTorque_mNm, 
-      rwSpeedRad, p1, p2, delta_omega);
+       rwSpeedRad, p1, p2, delta_omega);
 
     pwm_duty = (commandedTorque_mNm*15*mNm_to_mA*mA_to_duty + pwmOffset)*duty_to_bin;
 
