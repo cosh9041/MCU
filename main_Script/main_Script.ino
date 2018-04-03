@@ -77,15 +77,15 @@ double const centerOffsetDegFine = 160*convertPixToDegFine;
 double const convertDegToRad = 3.1415926535897932384626433832795/180;
 
 float rwSpeedRad; 
-float const p1 = 10.0; // TODO: p1 and p2 need to be set via data from Dalton. These are just placeholders
-float const p2 = 10.0; 
+float const p1 = 1; //TODO: Determine these better
+float const p2 = 0.1303; // mNm, coloumb friction
+float MOI = 1; //MOI of RW, stubbed out for now
 float delta_omega; // small delta near zero where we set torque to zero to simulate friction. TODO: Tune this value
 uint16_t const lengthOfHistory = 1000;
 // currentIndex points to the most recent data point. The last 100 data points are accumulated "behind"
 // this index. For example, if the currentIndex is 55, the order (in terms of recency) of the stored indicies
 // is 55....0...99...56. I.e. the most recently stored index is 55 (just stored), and the oldest stored index is 56.
 uint16_t currentIndex = 0;
-float MOI = 1; //MOI of RW, stubbed out for now
 
 //TODO: Determine units and ideal length for these. 
 float commandedTorqueHistory[lengthOfHistory];
@@ -114,10 +114,9 @@ void loop()
   storeTorqueAndIncrementIndex(commandedTorqueHistory, &currentIndex, mockCommandTorque, lengthOfHistory);
 
   // TODO: Actually get these values and replace mocks in function calls. commandedTorque will come from 
-  // control law. rwSpeed comes from encoder on RW, timeStamp comes from ???
+  // control law. rwSpeed comes from encoder on RW
   mockCommandTorque += 0.4;
   mockRWSpeed += 0.1;
-  mockTimeStamp += 0.01;
 
   digitalWrite(46,LOW);
 
@@ -135,9 +134,9 @@ void loop()
     // call to Compute assigns output to variable commandedTorque_mNm via pointers
     myPID.Compute(); 
 
+
     // TODO: Test injection strength and tune for delta_omega
-    commandedTorque_mNm = injectRWFault(isPrimaryRWActive, cmdToFaultRW, commandedTorque_mNm, 
-       rwSpeedRad, p1, p2, delta_omega);
+    commandedTorque_mNm = injectRWFault(fmState, commandedTorque_mNm, rwSpeedRad, p1, p2, delta_omega);
 
     pwm_duty = (commandedTorque_mNm*15*mNm_to_mA*mA_to_duty + pwmOffset)*duty_to_bin;
 
