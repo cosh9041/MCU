@@ -97,13 +97,12 @@ float orderedTimeStampHistory[lengthOfHistory];
 float angularAccel[lengthOfHistory-1];
 
 float mockRWSpeed = 0.0;
-float mockTimeStamp = 0.0;
 float mockCommandTorque = 0.4;
 
 void loop() 
 {
   // Log RW speed.
-  storeRWSpeed(reactionWheelSpeedHistory, timeStampHistory, currentIndex, mockRWSpeed, mockTimeStamp);
+  storeRWSpeed(reactionWheelSpeedHistory, timeStampHistory, currentIndex, mockRWSpeed, millis());
 
   // Stores ordered lists of last n = `lengthOfHistory` data points, with most recent being at index 0
   getOrderedHistory(reactionWheelSpeedHistory, orderedRWSpeedHistory, lengthOfHistory, currentIndex);
