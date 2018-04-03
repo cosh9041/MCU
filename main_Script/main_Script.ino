@@ -56,6 +56,11 @@ void setup()
   digitalWrite(27,HIGH);
 
   initializeFaultState(fmState);
+
+  // Sets the resolution of the ADC to be 12 bits (4096 bins)
+  analogReadResolution(12);
+  pinMode(A0, INPUT);
+
 } 
 
 //conversions for torques to PWM bins
@@ -71,10 +76,17 @@ int k;
 char buf[32];
 uint16_t blocks;     
 
+// Pixy conversions
 double const convertPixToDegCoarse = 0.2748;
 double const convertPixToDegFine = 0.0522;
 double const centerOffsetDegFine = 160*convertPixToDegFine;
-double const convertDegToRad = 3.1415926535897932384626433832795/180;
+double const convertDegToRad = 3.1415926535897932384626433832795/180; 
+
+// Reaction Wheel speed conversions
+
+
+// Reaction wheel speed variable
+uint16_t RWspeed;
 
 // Fault status "bits" as uint8_t since c doesn't support bools (c++ does, but not c)
 uint8_t isPrimaryRWActive; 
@@ -85,7 +97,6 @@ uint8_t isRecovering;
 uint8_t faultType; // 0 if no fault, 1 if fine sensor fault, 2 if coarse sensor fault
 uint8_t cmdToRecover;
 uint8_t faultTimerActive;
-float rwSpeedRad; 
 float const p1 = 10.0; // TODO: p1 and p2 need to be set via data from Dalton. These are just placeholders
 float const p2 = 10.0; 
 float delta_omega; // small delta near zero where we set torque to zero to simulate friction. TODO: Tune this value
@@ -109,10 +120,20 @@ float mockRWSpeed = 0.0;
 float mockTimeStamp = 0.0;
 float mockCommandTorque = 0.4;
 
+//double Tstart, Tstop, a;
 void loop() 
 {
+
+  //Tstart = millis();
+  // Example of pulling rw speed from motor analog output
+  RWspeed = analogRead(A0);
+  RWspeed = (28000/4096*RWspeed-14000)*2*PI/60;
+  //sprintf('Rw speed bin is\n');
+  Serial.println(RWspeed);
+
   // Log RW speed.
   storeRWSpeed(reactionWheelSpeedHistory, timeStampHistory, currentIndex, mockRWSpeed, mockTimeStamp);
+
 
   // Stores ordered lists of last n = `lengthOfHistory` data points, with most recent being at index 0
   getOrderedHistory(reactionWheelSpeedHistory, orderedRWSpeedHistory, lengthOfHistory, currentIndex);
@@ -146,7 +167,7 @@ void loop()
 
     // TODO: Test injection strength and tune for delta_omega
     commandedTorque_mNm = injectRWFault(isPrimaryRWActive, cmdToFaultRW, commandedTorque_mNm, 
-      rwSpeedRad, p1, p2, delta_omega);
+      RWspeed, p1, p2, delta_omega);
 
     pwm_duty = (commandedTorque_mNm*15*mNm_to_mA*mA_to_duty + pwmOffset)*duty_to_bin;
 
@@ -162,14 +183,14 @@ void loop()
     pwm.pinDuty( 6, pwm_duty3 );  // computed duty cycle on Pin 6
     
     // TODO: Do we need this printing stuff?
-    Serial.print(commandedTorque_mNm,5);
-    Serial.print(",");
-    Serial.print(pwm_duty,5);
-    Serial.print(",");
-    Serial.print(pwm_duty2,5);
-    Serial.print(",");
-    Serial.print(pwm_duty3);
-    Serial.print("\n");
+    //Serial.print(commandedTorque_mNm,5);
+    //Serial.print(",");
+    //Serial.print(pwm_duty,5);
+    //Serial.print(",");
+    //Serial.print(pwm_duty2,5);
+    //Serial.print(",");
+    //Serial.print(pwm_duty3);
+    //Serial.print("\n");
     
     // TODO: Do we need these lines?
       //digitalWrite(27,LOW);
@@ -184,8 +205,8 @@ void loop()
     // frame would bog down the Arduino
     if (i%1==0) 
     {
-      sprintf(buf, "Detected %d:\n", blocks);
-      Serial.print(buf);
+      //sprintf(buf, "Detected %d:\n", blocks);
+      //Serial.print(buf);
     // TODO: Do we need these lines?
 //    for (k=0; k<blocks; k++)
 //      {
@@ -195,4 +216,7 @@ void loop()
     }
 //    }
   }  
+  //Tstop = millis();
+  //a = Tstop - Tstart;
+  //Serial.print(a);
 }
