@@ -14,7 +14,7 @@ extern "C" {
 
 #include <fm_util.h>
 
-void fsInjection(double *deltaThetaRadFine1, FmState *fmState);
+void fsInjection(double *deltaTheta, FmState *fmState);
 
 #ifdef __cplusplus
 }
