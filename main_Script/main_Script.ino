@@ -11,7 +11,7 @@ Servo myservo;
 #include <DuePWM.h>
 #include <stdio.h>
 #include <inttypes.h>
-
+#include <fsInjection.h>
 
 #define PWM_FREQ1  6600
 #define PWM_FREQ2  6600
@@ -127,7 +127,8 @@ void loop()
   {
     deltaThetaRadFine1 = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
     deltaThetaRad = deltaThetaRadFine1;
-
+    fsInjection(&deltaThetaRad, fmState);
+    
     faultManagement(fmState, angularAccel, orderedCommandedTorqueHistory,
 		    lengthOfHistory, MOI);
 

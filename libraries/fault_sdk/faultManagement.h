@@ -21,6 +21,7 @@ void faultManagement(FmState *fmState, float *angularAccel, float *commandedTorq
 void manageNewFaultDetected(FmState *fmState);
 
 void manageFaultAlreadyDetected(FmState *fmState);
+
 unsigned char checkThreshold();
 
 uint8_t faultCheckRW(FmState *fmState, float *angularAccel, float *commandedTorque, uint16_t length, float MOI);

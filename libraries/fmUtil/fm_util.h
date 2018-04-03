@@ -6,6 +6,8 @@ extern "C" {
 #endif
 #include <inttypes.h>
 
+#include <inttypes.h>
+
 typedef struct {
 	uint8_t isFaulted;
 	uint8_t isRecovering;
@@ -15,6 +17,9 @@ typedef struct {
 	uint8_t activeRW; //Reaction wheels: 0 == both off, 1 == primary is on, 2 == secondary is on
 	uint8_t activeFS; //Fine sensors: 0 == both off, 1 == primary is on, 2 == secondary is on
     unsigned long faultTimerStart;
+	uint8_t cmdToFaultRW;
+	uint8_t cmdToFaultFS;
+	float fsBias;
 } FmState;
 
 void initializeFaultState(FmState *fmState);
