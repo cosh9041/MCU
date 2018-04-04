@@ -9,7 +9,7 @@ extern "C" {
 
 typedef struct {
 	float fsBias;
-    uint8_t cmdToFaultRW;
+	uint8_t cmdToFaultRW;
 	uint8_t cmdToFaultFS;
 } FiState;
 

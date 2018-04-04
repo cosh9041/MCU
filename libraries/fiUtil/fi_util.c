@@ -7,5 +7,4 @@ void initializeFaultInjectState(FiState *fiState) {
   fiState->fsBias = 10;
   fiState->cmdToFaultRW = 0;
   fiState->cmdToFaultFS = 0;
-
 }
