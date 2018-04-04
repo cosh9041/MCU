@@ -60,7 +60,6 @@ void setup()
   // Sets the resolution of the ADC to be 12 bits (4096 bins)
   analogReadResolution(12);
   pinMode(A0, INPUT);
-
 } 
 
 //conversions for torques to PWM bins
@@ -86,7 +85,8 @@ double const convertDegToRad = 3.1415926535897932384626433832795/180;
 
 
 // Reaction wheel speed variable
-uint16_t RWspeed;
+uint16_t rwSpeedBin;
+double RWspeed;
 
 // Fault status "bits" as uint8_t since c doesn't support bools (c++ does, but not c)
 uint8_t isPrimaryRWActive; 
@@ -123,11 +123,11 @@ float mockCommandTorque = 0.4;
 //double Tstart, Tstop, a;
 void loop() 
 {
-
   //Tstart = millis();
   // Example of pulling rw speed from motor analog output
-  RWspeed = analogRead(A0);
-  RWspeed = (28000/4096*RWspeed-14000)*2*PI/60;
+  rwSpeedBin = analogRead(A0);
+  // hard code in the '- 81' portion. This tunes down to 0 rads. most likely our system isn't perfect and is causing this. Not sure tho
+  RWspeed = (28000/4096*rwSpeedBin - 14000)*2*PI/60 - 81;
   //sprintf('Rw speed bin is\n');
   Serial.println(RWspeed);
 
