@@ -26,7 +26,7 @@ double deltaThetaRadCoarse1, deltaThetaRadCoarse2;
 double Setpoint, deltaThetaRad, commandedTorque_mNm;
 
 //Specify the links and initial tuning parameters
-double const Kp=0.4193213777, Ki=0.003150323227, Kd=12.61957147, N=0.155;
+double const Kp=0.298334346525491, Ki=0.00116724851061565, Kd=13.4288733415698, N=0.155;
 PID myPID(&deltaThetaRad, &commandedTorque_mNm, &Setpoint, Kp, Ki, Kd, N, DIRECT);
 
 FmState base = {.isFaulted = 0};
@@ -34,7 +34,6 @@ FmState *fmState = &base;
 
 void setup() 
 { 
-  digitalWrite(27,LOW);
   Serial.begin(9600);
   Serial.print("Starting...\n");
   pixy.init();
@@ -53,7 +52,16 @@ void setup()
   digitalWrite(46,HIGH);
 
   //Enable Cycle
-  digitalWrite(27,HIGH);
+  digitalWrite(33,HIGH); //logic analyzer
+  digitalWrite(39,LOW);  //drive redundant low
+  digitalWrite(29,HIGH); //drive main high
+  delay(1000);
+  digitalWrite(39,HIGH); //cycle redundnat high
+  digitalWrite(29,LOW); //cycle main low
+  delay(1000);
+  
+  digitalWrite(29,HIGH);//cycle main high
+  
 
   initializeFaultState(fmState);
 } 
@@ -151,7 +159,6 @@ void loop()
     }
     pwm_duty2 = round(pwm_duty);
     pwm_duty3 = (uint32_t) pwm_duty2;
-    digitalWrite(27,HIGH);
     pwm.pinDuty( 6, pwm_duty3 );  // computed duty cycle on Pin 6
     
     // TODO: Do we need this printing stuff?
@@ -187,5 +194,9 @@ void loop()
 //        pixy.blocks[k].print();
     }
 //    }
-  }  
+  }
+  else {
+    pwm_duty3 = 127;
+    pwm.pinDuty( 6, pwm_duty3 );
+  }
 }
