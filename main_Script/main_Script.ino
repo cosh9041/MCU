@@ -56,6 +56,10 @@ void setup()
   digitalWrite(27,HIGH);
 
   initializeFaultState(fmState);
+
+  // Sets the resolution of the ADC to be 12 bits (4096 bins)
+  analogReadResolution(12);
+  pinMode(A0, INPUT);
 } 
 
 //conversions for torques to PWM bins
@@ -71,10 +75,18 @@ int k;
 char buf[32];
 uint16_t blocks;     
 
+// Pixy conversions
 double const convertPixToDegCoarse = 0.2748;
 double const convertPixToDegFine = 0.0522;
 double const centerOffsetDegFine = 160*convertPixToDegFine;
-double const convertDegToRad = 3.1415926535897932384626433832795/180;
+double const convertDegToRad = 3.1415926535897932384626433832795/180; 
+
+// Reaction Wheel speed conversions
+
+
+// Reaction wheel speed variable
+uint16_t rwSpeedBin;
+double RWspeed;
 
 float rwSpeedRad; 
 float const p1 = 1; //TODO: Determine these better
@@ -99,10 +111,18 @@ float angularAccel[lengthOfHistory-1];
 float mockRWSpeed = 0.0;
 float mockCommandTorque = 0.4;
 
+void getRWSpeed(double *rwSpeedRad, uint16_t analogReading) {
+  // hard coded in the '- 81' portion. This tunes down to 0 rads. most likely our system isn't perfect and is causing this. Not sure tho
+  *rwSpeedRad = (28000/4096*analogReading - 14000)*2*PI/60 - 81;
+}
+
 void loop() 
 {
+  getRWSpeed(double *rwSpeedRad, analogRead(A0));
+  Serial.println(*rwSpeedRad);
+
   // Log RW speed.
-  storeRWSpeed(reactionWheelSpeedHistory, timeStampHistory, currentIndex, mockRWSpeed, millis());
+  storeRWSpeed(reactionWheelSpeedHistory, timeStampHistory, currentIndex, *rwSpeedRad, millis());
 
   // Stores ordered lists of last n = `lengthOfHistory` data points, with most recent being at index 0
   getOrderedHistory(reactionWheelSpeedHistory, orderedRWSpeedHistory, lengthOfHistory, currentIndex);
@@ -134,7 +154,6 @@ void loop()
     // call to Compute assigns output to variable commandedTorque_mNm via pointers
     myPID.Compute(); 
 
-
     // TODO: Test injection strength and tune for delta_omega
     commandedTorque_mNm = injectRWFault(fmState, commandedTorque_mNm, rwSpeedRad, p1, p2, delta_omega);
 
@@ -152,14 +171,14 @@ void loop()
     pwm.pinDuty( 6, pwm_duty3 );  // computed duty cycle on Pin 6
     
     // TODO: Do we need this printing stuff?
-    Serial.print(commandedTorque_mNm,5);
-    Serial.print(",");
-    Serial.print(pwm_duty,5);
-    Serial.print(",");
-    Serial.print(pwm_duty2,5);
-    Serial.print(",");
-    Serial.print(pwm_duty3);
-    Serial.print("\n");
+    //Serial.print(commandedTorque_mNm,5);
+    //Serial.print(",");
+    //Serial.print(pwm_duty,5);
+    //Serial.print(",");
+    //Serial.print(pwm_duty2,5);
+    //Serial.print(",");
+    //Serial.print(pwm_duty3);
+    //Serial.print("\n");
     
     // TODO: Do we need these lines?
       //digitalWrite(27,LOW);
@@ -174,8 +193,8 @@ void loop()
     // frame would bog down the Arduino
     if (i%1==0) 
     {
-      sprintf(buf, "Detected %d:\n", blocks);
-      Serial.print(buf);
+      //sprintf(buf, "Detected %d:\n", blocks);
+      //Serial.print(buf);
     // TODO: Do we need these lines?
 //    for (k=0; k<blocks; k++)
 //      {
@@ -185,4 +204,7 @@ void loop()
     }
 //    }
   }  
+  //Tstop = millis();
+  //a = Tstop - Tstart;
+  //Serial.print(a);
 }
