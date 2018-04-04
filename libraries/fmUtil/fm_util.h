@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <inttypes.h>
+
 typedef struct {
 	uint8_t isFaulted;
 	uint8_t isRecovering;
@@ -13,6 +15,9 @@ typedef struct {
 	uint8_t faultTimerActive;
 	uint8_t isPrimaryRWActive;
 	uint8_t isPrimaryFSActive;
+	uint8_t cmdToFaultRW;
+	uint8_t cmdToFaultFS;
+	float fsBias;
 } FmState;
 
 void initializeFaultState(FmState *fmState);

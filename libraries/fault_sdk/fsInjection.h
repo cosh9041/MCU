@@ -12,7 +12,9 @@
 extern "C" {
 #endif
 
-float fsInjection(int cmdToFaultSensor);
+#include <fm_util.h>
+
+void fsInjection(double *deltaTheta, FmState *fmState);
 
 #ifdef __cplusplus
 }

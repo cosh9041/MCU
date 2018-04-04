@@ -7,20 +7,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <fm_util.h>
+#include <inttypes.h>
 #include "fsInjection.h"
 
-float fsInjection(int cmdToFaultSensor)
-{
-	/*Definition of Variables*/
-	float theta_hat_rel,theta_rel,delta_theta_rel;	
-	
-	if (cmdToFaultSensor == 1)
-	{
-		delta_theta_rel = 10; /*TODO change to better bias*/
+
+void fsInjection(double *deltaTheta, FmState *fmState)
+{   
+	if (fmState->cmdToFaultFS){
+		*deltaTheta += fmState->fsBias;
 	}
-	else
-	{
-		delta_theta_rel = 0; /*No bias if not commanded to fault*/;
-	}
-return delta_theta_rel;
 }
