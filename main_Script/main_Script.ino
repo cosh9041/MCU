@@ -86,13 +86,12 @@ double const convertDegToRad = 3.1415926535897932384626433832795/180;
 
 // Reaction wheel speed variable
 uint16_t rwSpeedBin;
-double RWspeed;
 
 float rwSpeedRad; 
-float const p1 = 1; //TODO: Determine these better
+float const p1 = 0.0000335653965; // mNm/(rad/s), viscous friction 
 float const p2 = 0.1303; // mNm, coloumb friction
 float MOI = 1; //MOI of RW, stubbed out for now
-float delta_omega; // small delta near zero where we set torque to zero to simulate friction. TODO: Tune this value
+float delta_omega = 50; // small delta near zero where we set torque to zero to simulate friction. TODO: Tune this value
 uint16_t const lengthOfHistory = 1000;
 // currentIndex points to the most recent data point. The last 100 data points are accumulated "behind"
 // this index. For example, if the currentIndex is 55, the order (in terms of recency) of the stored indicies
@@ -111,18 +110,17 @@ float angularAccel[lengthOfHistory-1];
 float mockRWSpeed = 0.0;
 float mockCommandTorque = 0.4;
 
-void getRWSpeed(double *rwSpeedRad, uint16_t analogReading) {
+void getRWSpeed(float *rwSpeedRad, uint16_t analogReading) {
   // hard coded in the '- 81' portion. This tunes down to 0 rads. most likely our system isn't perfect and is causing this. Not sure tho
   *rwSpeedRad = (28000/4096*analogReading - 14000)*2*PI/60 - 81;
 }
 
 void loop() 
 {
-  getRWSpeed(double *rwSpeedRad, analogRead(A0));
-  Serial.println(*rwSpeedRad);
+  getRWSpeed(&rwSpeedRad, analogRead(A0));
 
   // Log RW speed.
-  storeRWSpeed(reactionWheelSpeedHistory, timeStampHistory, currentIndex, *rwSpeedRad, millis());
+  storeRWSpeed(reactionWheelSpeedHistory, timeStampHistory, currentIndex, rwSpeedRad, millis());
 
   // Stores ordered lists of last n = `lengthOfHistory` data points, with most recent being at index 0
   getOrderedHistory(reactionWheelSpeedHistory, orderedRWSpeedHistory, lengthOfHistory, currentIndex);
@@ -131,21 +129,22 @@ void loop()
 
   getAngularAcceleration(orderedRWSpeedHistory, orderedTimeStampHistory, angularAccel, lengthOfHistory);
 
-  storeTorqueAndIncrementIndex(commandedTorqueHistory, &currentIndex, mockCommandTorque, lengthOfHistory);
-
-  // TODO: Actually get these values and replace mocks in function calls. commandedTorque will come from 
-  // control law. rwSpeed comes from encoder on RW
-  mockCommandTorque += 0.4;
-  mockRWSpeed += 0.1;
-
   digitalWrite(46,LOW);
 
   blocks = pixy.getBlocks();// NOTE: TO run on board which is not pixy enabled, comment this line out
 
-  if (blocks)
-  {
+  if (blocks) {
+    // uncomment out these lines to inject a rw fault
+    // if (millis() > 30000 && !fmState->cmdToFaultRW && millis() < 60000) {
+    //   Serial.println("faulting");
+    //   fmState->cmdToFaultRW = 1;
+    // }
+    // if (millis() > 600000 && fmState->cmdToFaultRW) {
+    //   Serial.println("Unfaulting");
+    //   fmState->cmdToFaultRW = 0;
+    // }
+
     deltaThetaRadFine1 = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
-    fsInjection(&deltaThetaRadFine1, fmState);
     deltaThetaRad = deltaThetaRadFine1;
     
     faultManagement(fmState, angularAccel, orderedCommandedTorqueHistory,
@@ -159,10 +158,10 @@ void loop()
 
     pwm_duty = (commandedTorque_mNm*15*mNm_to_mA*mA_to_duty + pwmOffset)*duty_to_bin;
 
-    if (pwm_duty >230){
+    if (pwm_duty >230) {
       pwm_duty = 230;
     }
-    else if (pwm_duty <26){
+    else if (pwm_duty <26) {
       pwm_duty = 26; 
     }
     pwm_duty2 = round(pwm_duty);
@@ -170,6 +169,7 @@ void loop()
     digitalWrite(27,HIGH);
     pwm.pinDuty( 6, pwm_duty3 );  // computed duty cycle on Pin 6
     
+    storeTorqueAndIncrementIndex(commandedTorqueHistory, &currentIndex, commandedTorque_mNm, lengthOfHistory);
     // TODO: Do we need this printing stuff?
     //Serial.print(commandedTorque_mNm,5);
     //Serial.print(",");
@@ -203,8 +203,8 @@ void loop()
 //        pixy.blocks[k].print();
     }
 //    }
-  }  
-  //Tstop = millis();
-  //a = Tstop - Tstart;
-  //Serial.print(a);
+  } else {
+    // Serial.println("No Blocks detected");
+    // Serial.println(commandedTorque_mNm,5);
+  }
 }
