@@ -125,8 +125,8 @@ void loop()
   if (blocks)
   {
     deltaThetaRadFine1 = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
+    fsInjection(&deltaThetaRadFine1, fmState);
     deltaThetaRad = deltaThetaRadFine1;
-    fsInjection(&deltaThetaRad, fmState);
     
     faultManagement(fmState, angularAccel, orderedCommandedTorqueHistory,
 		    lengthOfHistory, MOI);
