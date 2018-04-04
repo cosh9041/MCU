@@ -195,6 +195,7 @@ void loop()
     }
 //    }
   }
+  // If we do not pick up blocks set PWM to 50% to shut off motors
   else {
     pwm_duty3 = 127;
     pwm.pinDuty( 6, pwm_duty3 );
