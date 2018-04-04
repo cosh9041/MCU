@@ -15,12 +15,9 @@ typedef struct {
 	uint8_t faultTimerActive;
 	uint8_t isPrimaryRWActive;
 	uint8_t isPrimaryFSActive;
-	uint8_t cmdToFaultRW;
-	uint8_t cmdToFaultFS;
-	float fsBias;
 } FmState;
 
-void initializeFaultState(FmState *fmState);
+void initializeFaultManagementState(FmState *fmState);
 
 #ifdef __cplusplus
 }

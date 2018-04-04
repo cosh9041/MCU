@@ -7,14 +7,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <fm_util.h>
+#include <fi_util.h>
 #include <inttypes.h>
 #include "fsInjection.h"
 
 
-void fsInjection(double *deltaTheta, FmState *fmState)
+void fsInjection(double *deltaTheta, FiState *fiState)
 {   
-	if (fmState->cmdToFaultFS){
-		*deltaTheta += fmState->fsBias;
+	if (fiState->cmdToFaultFS){
+		*deltaTheta += fiState->fsBias;
 	}
 }
