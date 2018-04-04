@@ -51,16 +51,16 @@ void setup()
   //Select Initial Pixy
   digitalWrite(46,HIGH);
 
-  //Enable Cycle
-  digitalWrite(33,HIGH); //logic analyzer
-  digitalWrite(39,LOW);  //drive redundant low
-  digitalWrite(29,HIGH); //drive main high
+  //Enable Primary Motor Cycle for Initialization 
+  digitalWrite(33,HIGH); //set ref of logic analyzer to 3.3V
+  digitalWrite(39,LOW);  //drive redundant motor low (disabled)
+  digitalWrite(29,HIGH); //drive primary motor high (enabled)
   delay(1000);
-  digitalWrite(39,HIGH); //cycle redundnat high
-  digitalWrite(29,LOW); //cycle main low
+  digitalWrite(39,HIGH); //cycle redundant motor high (enabled)
+  digitalWrite(29,LOW); //cycle primary motor low (disabled)
   delay(1000);
   
-  digitalWrite(29,HIGH);//cycle main high
+  digitalWrite(29,HIGH);//cycle primary motor high (enabled)
   
 
   initializeFaultState(fmState);
