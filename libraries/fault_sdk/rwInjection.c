@@ -19,7 +19,11 @@
 //		of reaction wheel friction
 //	-I: Moment of inertia of reaction wheel
 float calcInducedFriction(float omega, float p1, float p2) {
-	float induced = p1*omega + p2*5;
+	float induced;
+	if (omega < 0)
+		induced = p1*omega - p2*5;
+	if (omega > 0)
+		induced = p1*omega + p2*5;
 	return induced; 
 }
 
@@ -34,7 +38,7 @@ float injectRWFault(FmState *fmState, float tau_c, float omega, float p1, float 
 		  // turn off the commanded torque. The inclusion of friction could force the
 		  // augmented friction to spin the wheel past 0 and in the opposite direction,
 		  // which is impossible for natural friction to do.
-		  tau_hat_c = 0;  
+		  tau_hat_c = 0.05*tau_c;  
 		} else {
 			tau_hat_f = calcInducedFriction(omega, p1, p2); 
 			// The commanded torque should be decreased by the 'induced' friction, which
