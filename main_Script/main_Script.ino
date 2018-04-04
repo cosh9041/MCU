@@ -4,6 +4,7 @@ Servo myservo;
 #include <faultManagement.h>
 #include <rwInjection.h>
 #include <fm_util.h>
+#include <fi_util.h>
 #include <data_util.h>
 #include <SPI.h>  
 #include <Pixy.h>
@@ -29,8 +30,11 @@ double Setpoint, deltaThetaRad, commandedTorque_mNm;
 double const Kp=0.4193213777, Ki=0.003150323227, Kd=12.61957147, N=0.155;
 PID myPID(&deltaThetaRad, &commandedTorque_mNm, &Setpoint, Kp, Ki, Kd, N, DIRECT);
 
-FmState base = {.isFaulted = 0};
-FmState *fmState = &base;
+//Allocate for fm/fi state variables
+FmState fmBase;
+FmState *fmState = &fmBase;
+FiState fiBase;
+FiState *fiState = &fiBase;
 
 void setup() 
 { 
@@ -55,7 +59,9 @@ void setup()
   //Enable Cycle
   digitalWrite(27,HIGH);
 
-  initializeFaultState(fmState);
+
+  initializeFaultManagementState(fmState);
+  initializeFaultInjectState(fiState);
 } 
 
 //conversions for torques to PWM bins
@@ -71,6 +77,7 @@ int k;
 char buf[32];
 uint16_t blocks;     
 
+//conversions for pixy
 double const convertPixToDegCoarse = 0.2748;
 double const convertPixToDegFine = 0.0522;
 double const centerOffsetDegFine = 160*convertPixToDegFine;
@@ -128,7 +135,7 @@ void loop()
   if (blocks)
   {
     deltaThetaRadFine1 = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
-    fsInjection(&deltaThetaRadFine1, fmState);
+    fsInjection(&deltaThetaRadFine1, fiState);
     deltaThetaRad = deltaThetaRadFine1;
     
     faultManagement(fmState, angularAccel, orderedCommandedTorqueHistory,
