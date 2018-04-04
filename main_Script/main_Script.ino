@@ -4,6 +4,7 @@ Servo myservo;
 #include <faultManagement.h>
 #include <rwInjection.h>
 #include <fm_util.h>
+#include <fi_util.h>
 #include <data_util.h>
 #include <SPI.h>  
 #include <Pixy.h>
@@ -26,15 +27,22 @@ double deltaThetaRadCoarse1, deltaThetaRadCoarse2;
 double Setpoint, deltaThetaRad, commandedTorque_mNm;
 
 //Specify the links and initial tuning parameters
-double const Kp=0.4193213777, Ki=0.003150323227, Kd=12.61957147, N=0.155;
+double const Kp=0.298334346525491, Ki=0.00116724851061565, Kd=13.4288733415698, N=0.155;
 PID myPID(&deltaThetaRad, &commandedTorque_mNm, &Setpoint, Kp, Ki, Kd, N, DIRECT);
 
+<<<<<<< HEAD
 FmState base;
 FmState *fmState = &base;
+=======
+//Allocate for fm/fi state variables
+FmState fmBase;
+FmState *fmState = &fmBase;
+FiState fiBase;
+FiState *fiState = &fiBase;
+>>>>>>> master
 
 void setup() 
 { 
-  digitalWrite(27,LOW);
   Serial.begin(9600);
   Serial.print("Starting...\n");
   pixy.init();
@@ -52,6 +60,7 @@ void setup()
   //Select Initial Pixy
   digitalWrite(46,HIGH);
 
+<<<<<<< HEAD
   //Enable Cycle
   digitalWrite(27,HIGH);
 
@@ -60,6 +69,23 @@ void setup()
   // Sets the resolution of the ADC to be 12 bits (4096 bins)
   analogReadResolution(12);
   pinMode(A0, INPUT);
+=======
+  //Enable Primary Motor Cycle for Initialization 
+  digitalWrite(33,HIGH); //set ref of logic analyzer to 3.3V
+  digitalWrite(39,LOW);  //drive redundant motor low (disabled)
+  digitalWrite(29,HIGH); //drive primary motor high (enabled)
+  delay(1000);
+  digitalWrite(39,HIGH); //cycle redundant motor high (enabled)
+  digitalWrite(29,LOW); //cycle primary motor low (disabled)
+  delay(1000);
+  
+  digitalWrite(29,HIGH);//cycle primary motor high (enabled)
+  
+
+
+  initializeFaultManagementState(fmState);
+  initializeFaultInjectState(fiState);
+>>>>>>> master
 } 
 
 //conversions for torques to PWM bins
@@ -75,7 +101,11 @@ int k;
 char buf[32];
 uint16_t blocks;     
 
+<<<<<<< HEAD
 // Pixy conversions
+=======
+//conversions for pixy
+>>>>>>> master
 double const convertPixToDegCoarse = 0.2748;
 double const convertPixToDegFine = 0.0522;
 double const centerOffsetDegFine = 160*convertPixToDegFine;
@@ -145,6 +175,7 @@ void loop()
     // }
 
     deltaThetaRadFine1 = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
+    fsInjection(&deltaThetaRadFine1, fiState);
     deltaThetaRad = deltaThetaRadFine1;
     
     faultManagement(fmState, angularAccel, orderedCommandedTorqueHistory,
@@ -166,7 +197,6 @@ void loop()
     }
     pwm_duty2 = round(pwm_duty);
     pwm_duty3 = (uint32_t) pwm_duty2;
-    digitalWrite(27,HIGH);
     pwm.pinDuty( 6, pwm_duty3 );  // computed duty cycle on Pin 6
     
     storeTorqueAndIncrementIndex(commandedTorqueHistory, &currentIndex, commandedTorque_mNm, lengthOfHistory);
@@ -203,7 +233,11 @@ void loop()
 //        pixy.blocks[k].print();
     }
 //    }
-  } else {
+  }
+  else {
+    // If we do not pick up blocks set PWM to 50% to shut off motors
+    pwm_duty3 = 127;
+    pwm.pinDuty( 6, pwm_duty3 );
     // Serial.println("No Blocks detected");
     // Serial.println(commandedTorque_mNm,5);
   }

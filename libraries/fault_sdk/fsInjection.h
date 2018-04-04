@@ -12,9 +12,9 @@
 extern "C" {
 #endif
 
-#include <fm_util.h>
+#include <fi_util.h>
 
-void fsInjection(double *deltaTheta, FmState *fmState);
+void fsInjection(double *deltaTheta, FiState *fiState);
 
 #ifdef __cplusplus
 }

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "fm_util.h"
 
-void initializeFaultState(FmState *fmState) {
+void initializeFaultManagementState(FmState *fmState) {
   fmState->isFaulted = 0;
   fmState->isRecovering = 0;
   fmState->faultType = 0;
@@ -12,7 +12,4 @@ void initializeFaultState(FmState *fmState) {
   fmState->activeRW = 1;
   fmState->activeFS = 1;
   fmState->faultTimerStart = 0;
-  fmState->cmdToFaultRW = 0;
-  fmState->cmdToFaultFS = 0;
-  fmState->fsBias = 10;
 }
