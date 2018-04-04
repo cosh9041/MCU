@@ -5,6 +5,8 @@
  * Author(s) : Pol Sieira & Corwin Sheahan
  */ 
 
+#include <fm_util.h>
+#include <inttypes.h>
 #include "rwInjection.h"
 
 
@@ -17,24 +19,26 @@
 //		of reaction wheel friction
 //	-I: Moment of inertia of reaction wheel
 float calcInducedFriction(float omega, float p1, float p2) {
-	float induced = p1*omega + p2*5;
+	float induced;
+	if (omega < 0)
+		induced = p1*omega - p2*5;
+	if (omega > 0)
+		induced = p1*omega + p2*5;
 	return induced; 
 }
 
 // returns an injected torque value:
 // Variables [All units are SI units]:
 //	-isPrimaryRWactive: Should be 1 if primary reaction wheel is active, 0 otherwise
-float injectRWFault(unsigned char isPrimaryRWactive, unsigned char cmdToFaultRW, float tau_c, 
-		float omega, float p1, float p2, float delta_omega) {
-
+float injectRWFault(FmState *fmState, float tau_c, float omega, float p1, float p2, float delta_omega) {
 	float tau_hat_c, tau_hat_f;
-	if (isPrimaryRWactive && cmdToFaultRW) {
+	if (fmState->activeRW == 1 && fmState->cmdToFaultRW) {
 		if (omega < delta_omega && omega > -delta_omega) {
 		  // If the reaction wheel speed is close to 0, then we actually want to just 
 		  // turn off the commanded torque. The inclusion of friction could force the
 		  // augmented friction to spin the wheel past 0 and in the opposite direction,
 		  // which is impossible for natural friction to do.
-		  tau_hat_c = 0;  
+		  tau_hat_c = 0.05*tau_c;  
 		} else {
 			tau_hat_f = calcInducedFriction(omega, p1, p2); 
 			// The commanded torque should be decreased by the 'induced' friction, which

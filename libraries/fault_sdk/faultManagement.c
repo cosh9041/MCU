@@ -18,8 +18,10 @@ void faultManagement(FmState *fmState, float *angularAccel, float *commandedTorq
 		return;
 	}
 
-	// //faultCheckRW(fmState->faultType, ); //TODO: Impl fault check rw
-	// //faultCheckFS(); TODO: Impl fault check fs
+	uint8_t rwFaultDetected = faultCheckRW(fmState->faultType, angularAccel, commandedTorque, dataLength, MOI); 
+	if (rwFaultDetected) 
+		fmState->faultType = 2;
+	//uint8_t fsFaultDetected = faultCheckFS();// TODO: Impl fault check fs
 
 	/* fmState->faultType will be 0 if there is no fault, 1 if fs fault, 2 if RW*/
 	if (!fmState->faultType) {
@@ -37,7 +39,7 @@ void manageNewFaultDetected(FmState *fmState) {
 	//alertGSU(fmState->faultType);
 	switch(fmState->faultType) {
 		case 2:  // RW fault. turn off command to RW 1 to allow for visible deterioration of control
-			fmState->isPrimaryRWActive = 0;
+			fmState->activeRW = 0;
 			break;
 		case 1: break; // FS fault. In this case, we do nothing
 		default: break;
@@ -57,47 +59,37 @@ void manageFaultAlreadyDetected(FmState *fmState) {
 	fmState->isRecovering = 1;
 }
 
-uint8_t checkThreshold()
+uint8_t checkThreshold()//float *stream1, float *stream2, float )
 {
 	return 0; /*TODO: Change to actual threshold checking method*/
 }
 
-
-faultCheckRW(FmState *fmState) {
+uint8_t faultCheckRW(FmState *fmState, float *angularAccel, float *commandedTorque, uint16_t length, 
+	float MOI) {
 	uint8_t faultDetected, faultTimerActive;
 	
 	/*Run threshold check*/
 	faultDetected = checkThreshold(); //TODO: Impl check threshold w/ data. Tune for run time perf
-	
-	if (faultDetected) {
-		if (faultTimerActive) {
-			/*TODO: if (time < 30)
-			{
-				return;
-			}
-			else
-			{
-				timer_delete();
-				faultDetected = 1;
-			}
-			*/
-		}
-		else {
-			/*TODO: timer_create*/
-		}
-	} 
-	else {
-		if (faultTimerActive == 1)
-		{
-			/*TODO: timer_delete*/	
-		}
-		else
-		{
-			return 0;
-		}
-	}
-	return 0;
+
+	handleFaultStatus(fmState, faultDetected);
 }
+
+void handleFaultStatus(FmState *fmState, uint8_t faultDetected) {
+	if (!faultDetected) {
+		fmState->faultTimerActive = 0;
+		return;
+	}
+
+	if (!fmState->faultTimerActive) {
+		fmState->faultTimerStart = millis();
+		fmState->faultTimerActive = 1;
+	}
+	
+	if ((millis() - fmState->faultTimerStart) > 30000) {
+		fmState->faultTimerActive = 0;
+	}
+}
+
 
 uint8_t recovery(FmState *fmState)
 {

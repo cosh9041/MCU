@@ -30,11 +30,16 @@ double Setpoint, deltaThetaRad, commandedTorque_mNm;
 double const Kp=0.298334346525491, Ki=0.00116724851061565, Kd=13.4288733415698, N=0.155;
 PID myPID(&deltaThetaRad, &commandedTorque_mNm, &Setpoint, Kp, Ki, Kd, N, DIRECT);
 
+<<<<<<< HEAD
+FmState base;
+FmState *fmState = &base;
+=======
 //Allocate for fm/fi state variables
 FmState fmBase;
 FmState *fmState = &fmBase;
 FiState fiBase;
 FiState *fiState = &fiBase;
+>>>>>>> master
 
 void setup() 
 { 
@@ -55,6 +60,16 @@ void setup()
   //Select Initial Pixy
   digitalWrite(46,HIGH);
 
+<<<<<<< HEAD
+  //Enable Cycle
+  digitalWrite(27,HIGH);
+
+  initializeFaultState(fmState);
+
+  // Sets the resolution of the ADC to be 12 bits (4096 bins)
+  analogReadResolution(12);
+  pinMode(A0, INPUT);
+=======
   //Enable Primary Motor Cycle for Initialization 
   digitalWrite(33,HIGH); //set ref of logic analyzer to 3.3V
   digitalWrite(39,LOW);  //drive redundant motor low (disabled)
@@ -70,6 +85,7 @@ void setup()
 
   initializeFaultManagementState(fmState);
   initializeFaultInjectState(fiState);
+>>>>>>> master
 } 
 
 //conversions for torques to PWM bins
@@ -85,23 +101,32 @@ int k;
 char buf[32];
 uint16_t blocks;     
 
+<<<<<<< HEAD
+// Pixy conversions
+=======
 //conversions for pixy
+>>>>>>> master
 double const convertPixToDegCoarse = 0.2748;
 double const convertPixToDegFine = 0.0522;
 double const centerOffsetDegFine = 160*convertPixToDegFine;
-double const convertDegToRad = 3.1415926535897932384626433832795/180;
+double const convertDegToRad = 3.1415926535897932384626433832795/180; 
 
-// Fault status "bits" as uint8_t since c doesn't support bools (c++ does, but not c)
+// Reaction Wheel speed conversions
+
+
+// Reaction wheel speed variable
+uint16_t rwSpeedBin;
+
 float rwSpeedRad; 
-float const p1 = 10.0; // TODO: p1 and p2 need to be set via data from Dalton. These are just placeholders
-float const p2 = 10.0; 
-float delta_omega; // small delta near zero where we set torque to zero to simulate friction. TODO: Tune this value
+float const p1 = 0.0000335653965; // mNm/(rad/s), viscous friction 
+float const p2 = 0.1303; // mNm, coloumb friction
+float MOI = 1; //MOI of RW, stubbed out for now
+float delta_omega = 50; // small delta near zero where we set torque to zero to simulate friction. TODO: Tune this value
 uint16_t const lengthOfHistory = 1000;
 // currentIndex points to the most recent data point. The last 100 data points are accumulated "behind"
 // this index. For example, if the currentIndex is 55, the order (in terms of recency) of the stored indicies
 // is 55....0...99...56. I.e. the most recently stored index is 55 (just stored), and the oldest stored index is 56.
 uint16_t currentIndex = 0;
-float MOI = 1; //MOI of RW, stubbed out for now
 
 //TODO: Determine units and ideal length for these. 
 float commandedTorqueHistory[lengthOfHistory];
@@ -113,13 +138,19 @@ float orderedTimeStampHistory[lengthOfHistory];
 float angularAccel[lengthOfHistory-1];
 
 float mockRWSpeed = 0.0;
-float mockTimeStamp = 0.0;
 float mockCommandTorque = 0.4;
+
+void getRWSpeed(float *rwSpeedRad, uint16_t analogReading) {
+  // hard coded in the '- 81' portion. This tunes down to 0 rads. most likely our system isn't perfect and is causing this. Not sure tho
+  *rwSpeedRad = (28000/4096*analogReading - 14000)*2*PI/60 - 81;
+}
 
 void loop() 
 {
+  getRWSpeed(&rwSpeedRad, analogRead(A0));
+
   // Log RW speed.
-  storeRWSpeed(reactionWheelSpeedHistory, timeStampHistory, currentIndex, mockRWSpeed, mockTimeStamp);
+  storeRWSpeed(reactionWheelSpeedHistory, timeStampHistory, currentIndex, rwSpeedRad, millis());
 
   // Stores ordered lists of last n = `lengthOfHistory` data points, with most recent being at index 0
   getOrderedHistory(reactionWheelSpeedHistory, orderedRWSpeedHistory, lengthOfHistory, currentIndex);
@@ -128,20 +159,21 @@ void loop()
 
   getAngularAcceleration(orderedRWSpeedHistory, orderedTimeStampHistory, angularAccel, lengthOfHistory);
 
-  storeTorqueAndIncrementIndex(commandedTorqueHistory, &currentIndex, mockCommandTorque, lengthOfHistory);
-
-  // TODO: Actually get these values and replace mocks in function calls. commandedTorque will come from 
-  // control law. rwSpeed comes from encoder on RW, timeStamp comes from ???
-  mockCommandTorque += 0.4;
-  mockRWSpeed += 0.1;
-  mockTimeStamp += 0.01;
-
   digitalWrite(46,LOW);
 
   blocks = pixy.getBlocks();// NOTE: TO run on board which is not pixy enabled, comment this line out
 
-  if (blocks)
-  {
+  if (blocks) {
+    // uncomment out these lines to inject a rw fault
+    // if (millis() > 30000 && !fmState->cmdToFaultRW && millis() < 60000) {
+    //   Serial.println("faulting");
+    //   fmState->cmdToFaultRW = 1;
+    // }
+    // if (millis() > 600000 && fmState->cmdToFaultRW) {
+    //   Serial.println("Unfaulting");
+    //   fmState->cmdToFaultRW = 0;
+    // }
+
     deltaThetaRadFine1 = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
     fsInjection(&deltaThetaRadFine1, fiState);
     deltaThetaRad = deltaThetaRadFine1;
@@ -153,30 +185,30 @@ void loop()
     myPID.Compute(); 
 
     // TODO: Test injection strength and tune for delta_omega
-    //commandedTorque_mNm = injectRWFault(isPrimaryRWActive, cmdToFaultRW, commandedTorque_mNm, 
-    //  rwSpeedRad, p1, p2, delta_omega);
+    commandedTorque_mNm = injectRWFault(fmState, commandedTorque_mNm, rwSpeedRad, p1, p2, delta_omega);
 
     pwm_duty = (commandedTorque_mNm*15*mNm_to_mA*mA_to_duty + pwmOffset)*duty_to_bin;
 
-    if (pwm_duty >230){
+    if (pwm_duty >230) {
       pwm_duty = 230;
     }
-    else if (pwm_duty <26){
+    else if (pwm_duty <26) {
       pwm_duty = 26; 
     }
     pwm_duty2 = round(pwm_duty);
     pwm_duty3 = (uint32_t) pwm_duty2;
     pwm.pinDuty( 6, pwm_duty3 );  // computed duty cycle on Pin 6
     
+    storeTorqueAndIncrementIndex(commandedTorqueHistory, &currentIndex, commandedTorque_mNm, lengthOfHistory);
     // TODO: Do we need this printing stuff?
-    Serial.print(commandedTorque_mNm,5);
-    Serial.print(",");
-    Serial.print(pwm_duty,5);
-    Serial.print(",");
-    Serial.print(pwm_duty2,5);
-    Serial.print(",");
-    Serial.print(pwm_duty3);
-    Serial.print("\n");
+    //Serial.print(commandedTorque_mNm,5);
+    //Serial.print(",");
+    //Serial.print(pwm_duty,5);
+    //Serial.print(",");
+    //Serial.print(pwm_duty2,5);
+    //Serial.print(",");
+    //Serial.print(pwm_duty3);
+    //Serial.print("\n");
     
     // TODO: Do we need these lines?
       //digitalWrite(27,LOW);
@@ -191,8 +223,8 @@ void loop()
     // frame would bog down the Arduino
     if (i%1==0) 
     {
-      sprintf(buf, "Detected %d:\n", blocks);
-      Serial.print(buf);
+      //sprintf(buf, "Detected %d:\n", blocks);
+      //Serial.print(buf);
     // TODO: Do we need these lines?
 //    for (k=0; k<blocks; k++)
 //      {
@@ -202,9 +234,11 @@ void loop()
     }
 //    }
   }
-  // If we do not pick up blocks set PWM to 50% to shut off motors
   else {
+    // If we do not pick up blocks set PWM to 50% to shut off motors
     pwm_duty3 = 127;
     pwm.pinDuty( 6, pwm_duty3 );
+    // Serial.println("No Blocks detected");
+    // Serial.println(commandedTorque_mNm,5);
   }
 }
