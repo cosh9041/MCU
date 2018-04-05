@@ -12,10 +12,12 @@
 extern "C" {
 #endif
 
+#include <fi_util.h>
+
 float calcInducedFriction(float omega, float p1, float p2);
 
-float injectRWFault(unsigned char isPrimaryRWactive, unsigned char cmdToFaultRW, float tau_c, 
-		float omega, float p1, float p2, float delta_omega);
+float injectRWFault(FiState *fiState, float tau_c, float omega, float p1, float p2, 
+	float delta_omega, uint8_t primaryRWActive);
 
 #ifdef __cplusplus
 }

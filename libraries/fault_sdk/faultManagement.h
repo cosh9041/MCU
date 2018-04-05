@@ -18,15 +18,13 @@ extern "C" {
 void faultManagement(FmState *fmState, float *angularAccel, float *commandedTorque,
 		uint16_t dataLength, float MOI);
 
-// void faultManagement(uint8_t *isFaulted, uint8_t *isRecovering, uint8_t *faultType, 
-// 		uint8_t *cmdToRecover, uint8_t *faultTimerActive, uint8_t *isPrimaryRWActive, 
-// 		uint8_t *isPrimaryFSActive, float *angularAccel, float *commandedTorque,
-// 		uint16_t dataLength, float MOI);
 void manageNewFaultDetected(FmState *fmState);
 
 void manageFaultAlreadyDetected(FmState *fmState);
 
 unsigned char checkThreshold();
+
+uint8_t faultCheckRW(FmState *fmState, float *angularAccel, float *commandedTorque, uint16_t length, float MOI);
 
 unsigned char faultCheck();
 
