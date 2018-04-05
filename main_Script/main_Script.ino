@@ -30,16 +30,11 @@ double Setpoint, deltaThetaRad, commandedTorque_mNm;
 double const Kp=0.298334346525491, Ki=0.00116724851061565, Kd=13.4288733415698, N=0.155;
 PID myPID(&deltaThetaRad, &commandedTorque_mNm, &Setpoint, Kp, Ki, Kd, N, DIRECT);
 
-<<<<<<< HEAD
-FmState base;
-FmState *fmState = &base;
-=======
 //Allocate for fm/fi state variables
 FmState fmBase;
 FmState *fmState = &fmBase;
 FiState fiBase;
 FiState *fiState = &fiBase;
->>>>>>> 6e7abe4396ce4ce94738e673ad38eed293d2a9f8
 
 void setup() 
 { 
