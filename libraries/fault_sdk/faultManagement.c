@@ -11,17 +11,30 @@
 #include <fm_util.h>
 #include "faultManagement.h"
 
-void faultManagement(FmState *fmState, float *angularAccel, float *commandedTorque,
-		uint16_t dataLength, float MOI) {
+uint8_t faultCheckFS() {
+	return 0;
+}
+
+void faultManagement(FmState *fmState, float *reactionWheelSpeedHistory, float *timeStampHistory,
+ 	float *commandedTorque, uint16_t dataLength, float MOI) {
+
+	float responseTorque[dataLength];
+	getResponseTorque(reactionWheelSpeedHistory, timeStampHistory, responseTorque,
+		dataLength, MOI);
+
 	if (fmState->isFaulted) {
 		manageFaultAlreadyDetected(fmState);
 		return;
 	}
 
-	uint8_t rwFaultDetected = faultCheckRW(fmState->faultType, angularAccel, commandedTorque, dataLength, MOI); 
-	if (rwFaultDetected) 
+	uint8_t rwFaultDetected = faultCheckRW(fmState->faultType, responseTorque, commandedTorque, dataLength, MOI); 
+	if (rwFaultDetected) {
 		fmState->faultType = 2;
-	//uint8_t fsFaultDetected = faultCheckFS();// TODO: Impl fault check fs
+	}
+	uint8_t fsFaultDetected = faultCheckFS();// TODO: Impl fault check fs
+	if (fsFaultDetected) {
+		fmState->faultType = 1;
+	}
 
 	/* fmState->faultType will be 0 if there is no fault, 1 if fs fault, 2 if RW*/
 	if (!fmState->faultType) {
@@ -33,8 +46,25 @@ void faultManagement(FmState *fmState, float *angularAccel, float *commandedTorq
 	manageNewFaultDetected(fmState);
 }
 
+// Performs numerical differentiation to determine angular acceleration 
+// by taking the difference of omega / difference of t, then multiply by
+// moment of intertia to calculate response torque of system
+void getResponseTorque(float *omega, float *t, float *responseTorque, uint16_t length, float MOI) {
+  float omegaDiff;
+  float tDiff;
+  for (int i = 0; i < length-1; i++) {
+    omegaDiff = omega[i+1] - omega[i];
+    tDiff = t[i+1] - t[i];
+    if (tDiff != 0)
+      responseTorque[i] = omegaDiff / tDiff * MOI;
+    else
+      responseTorque[i] = 0;
+  }
+}
+
 void manageNewFaultDetected(FmState *fmState) {
 	fmState->isFaulted = 1;
+	fmState->faulting = 0;
 	/*TODO: Function to Alert GSU Function here*/
 	//alertGSU(fmState->faultType);
 	switch(fmState->faultType) {
@@ -59,12 +89,13 @@ void manageFaultAlreadyDetected(FmState *fmState) {
 	fmState->isRecovering = 1;
 }
 
-uint8_t checkThreshold()//float *stream1, float *stream2, float )
+//uint8_t checkThreshold(float *data_x, float *data_y, sz_ma
+uint8_t checkThreshold()
 {
 	return 0; /*TODO: Change to actual threshold checking method*/
 }
 
-uint8_t faultCheckRW(FmState *fmState, float *angularAccel, float *commandedTorque, uint16_t length, 
+uint8_t faultCheckRW(FmState *fmState, float *responseTorque, float *commandedTorque, uint16_t length, 
 	float MOI) {
 	uint8_t faultDetected, faultTimerActive;
 	

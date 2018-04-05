@@ -15,18 +15,23 @@ extern "C" {
 
 #include <fm_util.h>
 
-void faultManagement(FmState *fmState, float *angularAccel, float *commandedTorque,
-		uint16_t dataLength, float MOI);
+void faultManagement(FmState *fmState, float *reactionWheelSpeedHistory, float *timeStampHistory,
+ 	float *commandedTorque, uint16_t dataLength, float MOI);
 
 void manageNewFaultDetected(FmState *fmState);
 
-void manageFaultAlreadyDetected(FmState *fmState);
+uint8_t faultCheckRW(FmState *fmState, float *responseTorque, float *commandedTorque, uint16_t length, float MOI);
 
 unsigned char checkThreshold();
 
-uint8_t faultCheckRW(FmState *fmState, float *angularAccel, float *commandedTorque, uint16_t length, float MOI);
+void manageFaultAlreadyDetected(FmState *fmState);
 
 unsigned char faultCheck();
+
+// Performs numerical differentiation to determine angular acceleration 
+// by taking the difference of omega / difference of t. then multiplies by Moment of intertia (MOI)
+// to get the response torque on the reaction wheel
+void getResponseTorque(float *omega, float *t, float *responseTorque, uint16_t length, float MOI);
 
 unsigned char recovery(FmState *fmState);
 

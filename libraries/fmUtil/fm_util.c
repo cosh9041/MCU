@@ -12,4 +12,5 @@ void initializeFaultManagementState(FmState *fmState) {
   fmState->activeRW = 1;
   fmState->activeFS = 1;
   fmState->faultTimerStart = 0;
+  fmState->faulting = 0;
 }
