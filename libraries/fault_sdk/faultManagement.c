@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <stdlib.h>
+#include "Arduino.h"
+#include <math.h>
 #include <fm_util.h>
 #include "faultManagement.h"
 
@@ -27,7 +29,12 @@ void faultManagement(FmState *fmState, float *reactionWheelSpeedHistory, float *
 		return;
 	}
 
-	uint8_t rwFaultDetected = faultCheckRW(fmState->faultType, responseTorque, commandedTorque, dataLength, MOI); 
+	float responseTorque[dataLength];
+	float frictionTorque[dataLength];
+	getResponseTorque(reactionWheelSpeedHistory, timeStampHistory, responseTorque, commandedTorque, frictionTorque,
+		dataLength, MOI);
+
+	uint8_t rwFaultDetected = faultCheckRW(fmState->faultType, frictionTorque, commandedTorque, dataLength); 
 	if (rwFaultDetected) {
 		fmState->faultType = 2;
 	}
@@ -50,7 +57,8 @@ void faultManagement(FmState *fmState, float *reactionWheelSpeedHistory, float *
 // Performs numerical differentiation to determine angular acceleration 
 // by taking the difference of omega / difference of t, then multiply by
 // moment of intertia to calculate response torque of system
-void getResponseTorque(float *omega, float *t, float *responseTorque, uint16_t length, float MOI) {
+void getResponseTorque(float *omega, float *t, float *responseTorque, float *commandedTorque, 
+	float *frictionTorque, uint16_t length, float MOI) {
   float omegaDiff;
   float tDiff;
   for (int i = 0; i < length-1; i++) {
@@ -60,6 +68,7 @@ void getResponseTorque(float *omega, float *t, float *responseTorque, uint16_t l
       responseTorque[i] = omegaDiff / tDiff * MOI;
     else
       responseTorque[i] = 0;
+	frictionTorque[i] = commandedTorque[i] - responseTorque[i];
   }
 }
 
@@ -90,19 +99,19 @@ void manageFaultAlreadyDetected(FmState *fmState) {
 	fmState->isRecovering = 1;
 }
 
-//uint8_t checkThreshold(float *data_x, float *data_y, sz_ma
-uint8_t checkThreshold()
-{
-	return 0; /*TODO: Change to actual threshold checking method*/
+uint8_t checkThreshold(float *data_x, float *data_y, uint16_t length, float threshold) {
+//	float diff[length];
+	float meanDiff = 0;
+	for (int i = 0; i < length; i++) {
+		//diff[i] = fabsf(data_y[i] - data_x[i]);
+		meanDiff += fabsf(data_y[i] - data_x[i]);
+	}
+	if (meanDiff > threshold) return 1;
+	return 0; 
 }
 
-uint8_t faultCheckRW(FmState *fmState, float *responseTorque, float *commandedTorque, uint16_t length, 
-	float MOI) {
-	uint8_t faultDetected, faultTimerActive;
-	
-	/*Run threshold check*/
-	faultDetected = checkThreshold(); //TODO: Impl check threshold w/ data. Tune for run time perf
-
+uint8_t faultCheckRW(FmState *fmState, float *frictionTorque, float *commandedTorque, uint16_t length) {
+	uint8_t faultDetected = checkThreshold(frictionTorque, commandedTorque, length-1, 3*(fmState->p2)); //TODO: Impl check threshold w/ data. Tune for run time perf
 	handleFaultStatus(fmState, faultDetected);
 }
 
