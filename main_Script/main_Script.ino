@@ -168,7 +168,8 @@ void loop()
     myPID.Compute(); 
 
     // TODO: Test injection strength and tune for delta_omega
-    commandedTorque_mNm = injectRWFault(fmState, commandedTorque_mNm, rwSpeedRad, p1, p2, delta_omega);
+    commandedTorque_mNm = injectRWFault(fiState, commandedTorque_mNm, rwSpeedRad, p1, p2, delta_omega, 
+      fmState->activeRW == 1);
 
     pwm_duty = (commandedTorque_mNm*15*mNm_to_mA*mA_to_duty + pwmOffset)*duty_to_bin;
 

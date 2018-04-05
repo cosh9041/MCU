@@ -5,7 +5,7 @@
  * Author(s) : Pol Sieira & Corwin Sheahan
  */ 
 
-#include <fm_util.h>
+#include <fi_util.h>
 #include <inttypes.h>
 #include "rwInjection.h"
 
@@ -30,9 +30,9 @@ float calcInducedFriction(float omega, float p1, float p2) {
 // returns an injected torque value:
 // Variables [All units are SI units]:
 //	-isPrimaryRWactive: Should be 1 if primary reaction wheel is active, 0 otherwise
-float injectRWFault(FmState *fmState, float tau_c, float omega, float p1, float p2, float delta_omega) {
+float injectRWFault(FiState *fiState, float tau_c, float omega, float p1, float p2, float delta_omega, uint8_t primaryRWActive) {
 	float tau_hat_c, tau_hat_f;
-	if (fmState->activeRW == 1 && fmState->cmdToFaultRW) {
+	if (primaryRWActive && fiState->cmdToFaultRW) {
 		if (omega < delta_omega && omega > -delta_omega) {
 		  // If the reaction wheel speed is close to 0, then we actually want to just 
 		  // turn off the commanded torque. The inclusion of friction could force the
