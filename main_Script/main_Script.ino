@@ -147,14 +147,14 @@ void loop()
   blocks = pixy.getBlocks();// NOTE: TO run on board which is not pixy enabled, comment this line out
 
   if (blocks) {
-    // uncomment out these lines to inject a rw fault
-    // if (millis() > 30000 && !fmState->cmdToFaultRW && millis() < 60000) {
+    // uncomment out these lines to inject a rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
+    // if (millis() > 30000 && !fiState->cmdToFaultRW && millis() < 60000) {
     //   Serial.println("faulting");
-    //   fmState->cmdToFaultRW = 1;
+    //   fiState->cmdToFaultRW = 1;
     // }
-    // if (millis() > 600000 && fmState->cmdToFaultRW) {
+    // if (millis() > 600000 && fiState->cmdToFaultRW) {
     //   Serial.println("Unfaulting");
-    //   fmState->cmdToFaultRW = 0;
+    //   fiState->cmdToFaultRW = 0;
     // }
 
     deltaThetaRadFine1 = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
