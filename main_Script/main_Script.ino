@@ -16,10 +16,13 @@ Servo myservo;
 
 #define PWM_FREQ1  6600
 #define PWM_FREQ2  6600
+#define CS_PIN 46
+#define PRIMARY_FS_PIN 48
+#define SECONDARY_FS_PIN 50 
 
 DuePWM pwm( PWM_FREQ1, PWM_FREQ2 );
 
-Pixy pixy;
+Pixy pixyFine;
 
 //Define Variables we'll be connecting to
 double deltaThetaRadFine1, deltaThetaRadFine2;
@@ -36,25 +39,25 @@ FmState *fmState = &fmBase;
 FiState fiBase;
 FiState *fiState = &fiBase;
 
-void setup() 
-{ 
+void setup() { 
   Serial.begin(9600);
   Serial.print("Starting...\n");
-  pixy.init();
+  pixyFine.init();
   Setpoint = 0;
   //turn the PID on
   myPID.SetMode(AUTOMATIC);
 
-  //Configure PWM
+  // Initialize Pixy's
+  digitalWrite(CS_PIN,HIGH);
+  digitalWrite(PRIMARY_FS_PIN,HIGH);
+  digitalWrite(SECONDARY_FS_PIN,HIGH);
+
+  //Configure PWM for motors
   pwm.setFreq1( PWM_FREQ1 );
   pwm.setFreq2( PWM_FREQ2 );
 
   pwm.pinFreq1( 6 );  // Pin 6 freq set to "pwm_freq1" on clock A
   pwm.pinFreq2( 7 );  // Pin 7 freq set to "pwm_freq2" on clock B
-
-  //Select Initial Pixy
-  digitalWrite(46,HIGH);
-
 
   // Sets the resolution of the ADC for rw speed feedback to be 12 bits (4096 bins). 
   analogReadResolution(12);
@@ -86,16 +89,14 @@ uint32_t pwm_duty3;
 static int i = 0;
 int k;
 char buf[32];
-uint16_t blocks;     
+uint16_t fineBlocks;     
+uint16_t coarseBlocks;     
 
 // Pixy conversions
 double const convertPixToDegCoarse = 0.2748;
 double const convertPixToDegFine = 0.0522;
 double const centerOffsetDegFine = 160*convertPixToDegFine;
 double const convertDegToRad = 3.1415926535897932384626433832795/180; 
-
-// Reaction Wheel speed conversions
-
 
 // Reaction wheel speed variable
 uint16_t rwSpeedBin;
@@ -118,18 +119,49 @@ float timeStampHistory[lengthOfHistory];
 float orderedRWSpeedHistory[lengthOfHistory];
 float orderedCommandedTorqueHistory[lengthOfHistory];
 float orderedTimeStampHistory[lengthOfHistory];
-float angularAccel[lengthOfHistory-1];
-
-float mockRWSpeed = 0.0;
-float mockCommandTorque = 0.4;
+float responseTorque[lengthOfHistory-1];
 
 void getRWSpeed(float *rwSpeedRad, uint16_t analogReading) {
-  // hard coded in the '- 81' portion. This tunes down to 0 rads. most likely our system isn't perfect and is causing this. Not sure tho
+  // hard coded in the '- 81' portion. This tunes down to ~0 rads. most likely our system isn't perfect and is causing this. Not sure tho
   *rwSpeedRad = (28000/4096*analogReading - 14000)*2*PI/60 - 81;
 }
 
-void loop() 
-{
+uint16_t getCSBlocks() {
+  digitalWrite(CS_PIN, LOW);
+  uint16_t blocks = pixyFine.getBlocks();
+  digitalWrite(CS_PIN, HIGH);
+  return blocks; 
+}
+
+uint16_t getFSBlocks() {
+  uint16_t blocks;
+  // Get blocks depending on which fine sensor is active
+  if (fmState->activeFS == 1) {
+    digitalWrite(PRIMARY_FS_PIN, LOW);
+    blocks = pixyFine.getBlocks();
+    digitalWrite(PRIMARY_FS_PIN, HIGH);
+  } else if (fmState->activeFS == 2) {
+    digitalWrite(SECONDARY_FS_PIN, LOW);
+    blocks = pixyFine.getBlocks();
+    digitalWrite(SECONDARY_FS_PIN, HIGH);
+  }
+  return blocks ;
+}
+
+// Converts mNm torque into pwm signal and assigns to appropriate pin
+void sendTorquePWMCommand(double commandedTorque_mNm) {
+  pwm_duty = (commandedTorque_mNm*15*mNm_to_mA*mA_to_duty + pwmOffset)*duty_to_bin;
+  if (pwm_duty >230) {
+    pwm_duty = 230;
+  } else if (pwm_duty <26) {
+    pwm_duty = 26; 
+  }
+  pwm_duty2 = round(pwm_duty);
+  pwm_duty3 = (uint32_t) pwm_duty2;
+  pwm.pinDuty( 6, pwm_duty3 );  // computed duty cycle on Pin 6
+}
+
+void loop() {
   getRWSpeed(&rwSpeedRad, analogRead(A0));
 
   // Log RW speed.
@@ -140,15 +172,21 @@ void loop()
   getOrderedHistory(commandedTorqueHistory, orderedCommandedTorqueHistory, lengthOfHistory, currentIndex);
   getOrderedHistory(timeStampHistory, orderedTimeStampHistory, lengthOfHistory, currentIndex);
 
-  getAngularAcceleration(orderedRWSpeedHistory, orderedTimeStampHistory, angularAccel, lengthOfHistory);
+  // faultManagement will update fmState struct contents to reflect fault detected or not
+  faultManagement(fmState, orderedRWSpeedHistory, orderedTimeStampHistory,
+ 	  orderedCommandedTorqueHistory, lengthOfHistory, MOI);
 
-  digitalWrite(46,LOW);
+  //coarseBlocks = getCSBlocks();
+  fineBlocks = getFSBlocks();
 
-  blocks = pixy.getBlocks();// NOTE: TO run on board which is not pixy enabled, comment this line out
-
-  if (blocks) {
+  if (fineBlocks) {
+    deltaThetaRadFine1 = ((pixyFine.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
+    // Injects if commanded to inject fault
+    fsInjection(&deltaThetaRadFine1, fiState);
+    deltaThetaRad = deltaThetaRadFine1;
+ 
     // uncomment out these lines to inject a rw fault
-    // if (millis() > 30000 && !fmState->cmdToFaultRW && millis() < 60000) {
+    // if (millis() > 30000 && !fmState->cmdToFaultRW) {
     //   Serial.println("faulting");
     //   fmState->cmdToFaultRW = 1;
     // }
@@ -156,14 +194,8 @@ void loop()
     //   Serial.println("Unfaulting");
     //   fmState->cmdToFaultRW = 0;
     // }
-
-    deltaThetaRadFine1 = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
-    fsInjection(&deltaThetaRadFine1, fiState);
-    deltaThetaRad = deltaThetaRadFine1;
+   
     
-    faultManagement(fmState, angularAccel, orderedCommandedTorqueHistory,
-		    lengthOfHistory, MOI);
-
     // call to Compute assigns output to variable commandedTorque_mNm via pointers
     myPID.Compute(); 
 
@@ -171,24 +203,15 @@ void loop()
     commandedTorque_mNm = injectRWFault(fiState, commandedTorque_mNm, rwSpeedRad, p1, p2, delta_omega, 
       fmState->activeRW == 1);
 
-    pwm_duty = (commandedTorque_mNm*15*mNm_to_mA*mA_to_duty + pwmOffset)*duty_to_bin;
-
-    if (pwm_duty >230) {
-      pwm_duty = 230;
-    }
-    else if (pwm_duty <26) {
-      pwm_duty = 26; 
-    }
-    pwm_duty2 = round(pwm_duty);
-    pwm_duty3 = (uint32_t) pwm_duty2;
-    pwm.pinDuty( 6, pwm_duty3 );  // computed duty cycle on Pin 6
-    
+    sendTorquePWMCommand(commandedTorque_mNm);
+   
     storeTorqueAndIncrementIndex(commandedTorqueHistory, &currentIndex, commandedTorque_mNm, lengthOfHistory);
   } else {
     // Serial.println("No Blocks detected");
     // Serial.println(commandedTorque_mNm,5);
-    // If we do not pick up blocks set PWM to 50% to shut off motors
+    // TODO: Determine what to do if we don't detect fineBlocks (should swivel until we detect in coarse)
+    // If we do not pick up fineBlocks set PWM to 50% to shut off motors
     pwm_duty3 = 127;
     pwm.pinDuty( 6, pwm_duty3 );
   }
-}
+} 
