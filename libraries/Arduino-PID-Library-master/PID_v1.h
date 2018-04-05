@@ -81,7 +81,7 @@ class PID
                                   //   what these values are.  with pointers we'll just know.
 			  
 	unsigned long lastTime;
-    double prePreError, preError, preTau, preOutput;
+    double prePreError, preError, preTau, preOutput, predState;
 	double outputSum, lastInput, lastTimeChange;
 
 	unsigned long SampleTime;

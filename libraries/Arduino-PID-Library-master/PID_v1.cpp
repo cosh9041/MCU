@@ -70,8 +70,8 @@ bool PID::Compute()
 	double error      = input - *mySetpoint; // current error
 	double pState  = kp  * (error - preError); // proportional post gain  state
 	double iState  = ki  * (error)*timeChange/1000; // integral post gain  state (deltaT already in ki)
-	//double dState  = (kd * (E.error - 2*E.preError + E.prePreError) - PIDstate(3))*n; // derivative post gain  state (deltaT already in kd)
-	double dState  = kd * ( (error - preError)/timeChange*1000  - (preError - prePreError)/lastTimeChange*1000);
+	double dState  = ( kd * ( (error - preError)/timeChange*1000 - (preError - prePreError)/lastTimeChange*1000) - predState)*n; // derivative post gain  state (deltaT already in kd)
+    //double dState  = kd * ( (error - preError)/timeChange*1000  - (preError - prePreError)/lastTimeChange*1000);
 	double output;
 	output = preTau + (pState + iState + dState);
 	lastTimeChange = timeChange;
@@ -79,6 +79,7 @@ bool PID::Compute()
 	prePreError = preError;
 	preError    = error;
 	preTau      = output;
+    predState   = dState;
 
 	//Print to arduino terminal
 		// Serial.print(input,4);
