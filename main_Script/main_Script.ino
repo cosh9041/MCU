@@ -36,6 +36,8 @@ FmState *fmState = &fmBase;
 FiState fiBase;
 FiState *fiState = &fiBase;
 
+unsigned long timeLastReadPixy;
+
 void setup() 
 { 
   Serial.begin(9600);
@@ -55,7 +57,6 @@ void setup()
   //Select Initial Pixy
   digitalWrite(46,HIGH);
 
-
   // Sets the resolution of the ADC for rw speed feedback to be 12 bits (4096 bins). 
   analogReadResolution(12);
   pinMode(A0, INPUT);
@@ -73,6 +74,8 @@ void setup()
 
   initializeFaultManagementState(fmState);
   initializeFaultInjectState(fiState);
+  
+  timeLastReadPixy = 0;
 } 
 
 //conversions for torques to PWM bins
@@ -144,7 +147,12 @@ void loop()
 
   digitalWrite(46,LOW);
 
-  blocks = pixy.getBlocks();// NOTE: TO run on board which is not pixy enabled, comment this line out
+  // NOTE: Pixy.getBlocks does a dirty nasty thing and returns 0 both when there are no blocks
+  // detected AND when there is no information. This ambiguous case cost us a lot of wasted time
+  if ((millis() - timeLastReadPixy) > 20) {
+    blocks = pixy.getBlocks();// NOTE: TO run on board which is not pixy enabled, comment this line out
+    timeLastReadPixy = millis();
+  }
 
   if (blocks) {
     // uncomment out these lines to inject a rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
