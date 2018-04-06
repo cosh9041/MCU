@@ -156,14 +156,14 @@ void loop()
 
   if (blocks) {
     // uncomment out these lines to inject a rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
-    if (millis() > 40000 && !fiState->cmdToFaultRW) {
-      Serial.println("faulting");
-      fiState->cmdToFaultRW = 1;
-    }
-    if (millis() > 100000 && fiState->cmdToFaultRW) {
-      Serial.println("Unfaulting");
-      fiState->cmdToFaultRW = 0;
-    }
+    //if (millis() > 40000 && !fiState->cmdToFaultRW) {
+    //  Serial.println("faulting");
+    //  fiState->cmdToFaultRW = 1;
+    //}
+    //if (millis() > 100000 && fiState->cmdToFaultRW) {
+    //  Serial.println("Unfaulting");
+    //  fiState->cmdToFaultRW = 0;
+    //}
 
     deltaThetaRadFine1 = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
     fsInjection(&deltaThetaRadFine1, fiState);
