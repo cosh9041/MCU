@@ -107,7 +107,7 @@ float rwSpeedRad;
 float const p1 = 0.0000335653965; // mNm/(rad/s), viscous friction 
 float const p2 = 0.1303; // mNm, coloumb friction
 float MOI = 1; //MOI of RW, stubbed out for now
-float delta_omega = 50; // small delta near zero where we set torque to zero to simulate friction. TODO: Tune this value
+float delta_omega = 15; // small delta near zero where we set torque to zero to simulate friction. TODO: Tune this value
 uint16_t const lengthOfHistory = 1000;
 // currentIndex points to the most recent data point. The last 100 data points are accumulated "behind"
 // this index. For example, if the currentIndex is 55, the order (in terms of recency) of the stored indicies
@@ -156,14 +156,14 @@ void loop()
 
   if (blocks) {
     // uncomment out these lines to inject a rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
-    // if (millis() > 30000 && !fiState->cmdToFaultRW && millis() < 60000) {
-    //   Serial.println("faulting");
-    //   fiState->cmdToFaultRW = 1;
-    // }
-    // if (millis() > 600000 && fiState->cmdToFaultRW) {
-    //   Serial.println("Unfaulting");
-    //   fiState->cmdToFaultRW = 0;
-    // }
+    //if (millis() > 40000 && !fiState->cmdToFaultRW) {
+    //  Serial.println("faulting");
+    //  fiState->cmdToFaultRW = 1;
+    //}
+    //if (millis() > 100000 && fiState->cmdToFaultRW) {
+    //  Serial.println("Unfaulting");
+    //  fiState->cmdToFaultRW = 0;
+    //}
 
     deltaThetaRadFine1 = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
     fsInjection(&deltaThetaRadFine1, fiState);
