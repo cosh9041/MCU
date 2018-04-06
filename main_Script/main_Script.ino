@@ -30,7 +30,7 @@ double deltaThetaRadCoarse1, deltaThetaRadCoarse2;
 double Setpoint, deltaThetaRad, commandedTorque_mNm;
 
 //Specify the links and initial tuning parameters
-double const Kp=0.298334346525491, Ki=0.00116724851061565, Kd=13.4288733415698, N=0.155;
+double const Kp=6.31600775000411, Ki=0.200331632823233, Kd=36.7969404030176, N=0.5;
 PID myPID(&deltaThetaRad, &commandedTorque_mNm, &Setpoint, Kp, Ki, Kd, N, DIRECT);
 
 //Allocate for fm/fi state variables
