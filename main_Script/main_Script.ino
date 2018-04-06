@@ -71,7 +71,7 @@ void setup() {
   digitalWrite(39,HIGH); //cycle redundant motor high (enabled)
   digitalWrite(29,LOW); //cycle primary motor low (disabled)
   delay(1000);
-  
+  digitalWrite(39,LOW); ////cycle redundant motor low (disabled)
   digitalWrite(29,HIGH);//cycle primary motor high (enabled)
 
   initializeFaultManagementState(fmState);
@@ -80,7 +80,7 @@ void setup() {
 
 //conversions for torques to PWM bins
 double mNm_to_mA = 1000.0/8.4;
-double mA_to_duty = 80.0/1000.0;
+double mA_to_duty = 80.0/1800.0;
 double duty_to_bin = 256.0/100.0;
 double pwm_duty;
 double pwmOffset = 50;
