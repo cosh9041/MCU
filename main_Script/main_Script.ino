@@ -119,7 +119,7 @@ float timeStampHistory[lengthOfHistory];
 float orderedRWSpeedHistory[lengthOfHistory];
 float orderedCommandedTorqueHistory[lengthOfHistory];
 float orderedTimeStampHistory[lengthOfHistory];
-float responseTorque[lengthOfHistory-1];
+//float responseTorque[lengthOfHistory-1];
 
 void getRWSpeed(float *rwSpeedRad, uint16_t analogReading) {
   // hard coded in the '- 81' portion. This tunes down to ~0 rads. most likely our system isn't perfect and is causing this. Not sure tho
