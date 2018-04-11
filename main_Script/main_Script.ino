@@ -75,7 +75,9 @@ void setup()
   analogReadResolution(12);
   pinMode(A0, INPUT);
 
-  //Enable Primary Motor Cycle for Initialization 
+  //Enable Primary Motor Cycle for Initialization; both motor controllers are 
+  //written high and switching comes from the pwm signals sent to the motor controller
+  //in the loop.
   digitalWrite(33,HIGH); //set ref of logic analyzer to 3.3V
   digitalWrite(39,LOW);  //drive redundant motor low (disabled)
   digitalWrite(29,HIGH); //drive primary motor high (enabled)
@@ -83,7 +85,6 @@ void setup()
   digitalWrite(39,HIGH); //cycle redundant motor high (enabled)
   digitalWrite(29,LOW); //cycle primary motor low (disabled)
   delay(1000);
-  digitalWrite(39,LOW); ////cycle redundant motor low (disabled)
   digitalWrite(29,HIGH);//cycle primary motor high (enabled)
 
   initializeFaultManagementState(fmState);
@@ -100,6 +101,7 @@ double pwm_duty;
 double pwmOffset = 50;
 double pwm_duty2;
 uint32_t pwm_duty3;
+uint32_t pwm_duty_inactive = 127;
 static int i = 0;
 int k;
 char buf[32];
@@ -207,19 +209,19 @@ void loop()
     }
     pwm_duty2 = round(pwm_duty);
     pwm_duty3 = (uint32_t) pwm_duty2;
-    pwm.pinDuty( 6, pwm_duty3 );  // computed duty cycle on Pin 6
+
+    // Testing switching b/w rw
+    if (millis() < 20000){
+      pwm.pinDuty( 6, pwm_duty3 );  // computed duty cycle on Pin 6 (Primary RW)
+      pwm.pinDuty( 7, pwm_duty_inactive );  // inactive duty cycle (127 PWM) on Pin 7 (Secondary RW)
+    }
+    else{
+      pwm.pinDuty( 6, pwm_duty_inactive );  // inactive duty cycle (127 PWM) on Pin 6 (Primary RW)
+      pwm.pinDuty( 7, pwm_duty3 );  // computed duty cycle on Pin 7 (Secondary RW)
+    }
     
     storeTorqueAndIncrementIndex(commandedTorqueHistory, &currentIndex, commandedTorque_mNm, lengthOfHistory);
   }else if(coarseBlocks){
-    // uncomment out these lines to inject a rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
-    //if (millis() > 40000 && !fiState->cmdToFaultRW) {
-    //  Serial.println("faulting");
-    //  fiState->cmdToFaultRW = 1;
-    //}
-    //if (millis() > 100000 && fiState->cmdToFaultRW) {
-    //  Serial.println("Unfaulting");
-    //  fiState->cmdToFaultRW = 0;
-    //}
 
     deltaThetaRad = ((coarsePixy.blocks[0].x)*convertPixToDegCoarse - centerOffsetDegCoarse)*convertDegToRad;
     
@@ -243,15 +245,24 @@ void loop()
     }
     pwm_duty2 = round(pwm_duty);
     pwm_duty3 = (uint32_t) pwm_duty2;
-    pwm.pinDuty( 6, pwm_duty3 );  // computed duty cycle on Pin 6
-    
+
+    // Testing switching b/w rw
+    if (millis() < 20000){
+      pwm.pinDuty( 6, pwm_duty3 );  // computed duty cycle on Pin 6 (Primary RW)
+      pwm.pinDuty( 7, pwm_duty_inactive );  // inactive duty cycle (127 PWM) on Pin 7 (Secondary RW)
+    }
+    else{
+      pwm.pinDuty( 6, pwm_duty_inactive );  // inactive duty cycle (127 PWM) on Pin 6 (Primary RW)
+      pwm.pinDuty( 7, pwm_duty3 );  // computed duty cycle on Pin 7 (Secondary RW)
+    }
+
     storeTorqueAndIncrementIndex(commandedTorqueHistory, &currentIndex, commandedTorque_mNm, lengthOfHistory);
   }else {
     // Serial.println("No Blocks detected");
     // Serial.println(commandedTorque_mNm,5);
     // If we do not pick up blocks set PWM to 50% to shut off motors
-    pwm_duty3 = 127;
-    pwm.pinDuty( 6, pwm_duty3 );
+    pwm.pinDuty( 6, pwm_duty_inactive );
+    pwm.pinDuty( 7, pwm_duty_inactive );
   }
   Serial.println(pwm_duty3);
 }
