@@ -22,7 +22,7 @@ Servo myservo;
 
 DuePWM pwm( PWM_FREQ1, PWM_FREQ2 );
 
-PixySPI_SS finePixy1(PRIMARY_FS_PIN);
+//PixySPI_SS finePixy1(PRIMARY_FS_PIN);
 PixySPI_SS finePixy2(SECONDARY_FS_PIN);
 PixySPI_SS coarsePixy(CS_PIN);
 
@@ -47,7 +47,7 @@ void setup()
 { 
   Serial.begin(9600);
   Serial.print("Starting...\n");
-  finePixy1.init();
+  //finePixy1.init();
   finePixy2.init();
   coarsePixy.init();
   Setpoint = 0;
@@ -100,7 +100,7 @@ double duty_to_bin = 256.0/100.0;
 double pwm_duty;
 double pwmOffset = 50;
 double pwm_duty2;
-uint32_t pwm_duty3;
+uint32_t pwm_duty3 = 127;
 uint32_t pwm_duty_inactive = 127;
 static int i = 0;
 int k;
@@ -176,14 +176,14 @@ void loop()
   if (fineBlocks) {
   
     // uncomment out these lines to inject a rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
-    //if (millis() > 40000 && !fiState->cmdToFaultRW) {
-    //  Serial.println("faulting");
-    //  fiState->cmdToFaultRW = 1;
-    //}
-    //if (millis() > 100000 && fiState->cmdToFaultRW) {
-    //  Serial.println("Unfaulting");
-    //  fiState->cmdToFaultRW = 0;
-    //}
+    if (millis() > 40000 && !fiState->cmdToFaultRW) {
+      Serial.println("faulting");
+      fiState->cmdToFaultRW = 1;
+    }
+    if (millis() > 100000 && fiState->cmdToFaultRW) {
+      Serial.println("Unfaulting");
+      fiState->cmdToFaultRW = 0;
+    }
 
     deltaThetaRadFine2 = ((finePixy2.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
     fsInjection(&deltaThetaRadFine2, fiState);
@@ -264,5 +264,5 @@ void loop()
     pwm.pinDuty( 6, pwm_duty_inactive );
     pwm.pinDuty( 7, pwm_duty_inactive );
   }
-  Serial.println(pwm_duty3);
+  //Serial.println(pwm_duty3);
 }
