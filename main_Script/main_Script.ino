@@ -211,14 +211,14 @@ void loop()
     pwm_duty3 = (uint32_t) pwm_duty2;
 
     // Testing switching b/w rw
-    if (millis() < 20000){
+    //if (millis() < 20000){
       pwm.pinDuty( 6, pwm_duty3 );  // computed duty cycle on Pin 6 (Primary RW)
       pwm.pinDuty( 7, pwm_duty_inactive );  // inactive duty cycle (127 PWM) on Pin 7 (Secondary RW)
-    }
-    else{
-      pwm.pinDuty( 6, pwm_duty_inactive );  // inactive duty cycle (127 PWM) on Pin 6 (Primary RW)
-      pwm.pinDuty( 7, pwm_duty3 );  // computed duty cycle on Pin 7 (Secondary RW)
-    }
+    //}
+    //else{
+    //  pwm.pinDuty( 6, pwm_duty_inactive );  // inactive duty cycle (127 PWM) on Pin 6 (Primary RW)
+    //  pwm.pinDuty( 7, pwm_duty3 );  // computed duty cycle on Pin 7 (Secondary RW)
+    //}
     
     storeTorqueAndIncrementIndex(commandedTorqueHistory, &currentIndex, commandedTorque_mNm, lengthOfHistory);
   }else if(coarseBlocks){
@@ -247,14 +247,14 @@ void loop()
     pwm_duty3 = (uint32_t) pwm_duty2;
 
     // Testing switching b/w rw
-    if (millis() < 20000){
+    //if (millis() < 20000){
       pwm.pinDuty( 6, pwm_duty3 );  // computed duty cycle on Pin 6 (Primary RW)
       pwm.pinDuty( 7, pwm_duty_inactive );  // inactive duty cycle (127 PWM) on Pin 7 (Secondary RW)
-    }
-    else{
-      pwm.pinDuty( 6, pwm_duty_inactive );  // inactive duty cycle (127 PWM) on Pin 6 (Primary RW)
-      pwm.pinDuty( 7, pwm_duty3 );  // computed duty cycle on Pin 7 (Secondary RW)
-    }
+    //}
+    //else{
+    //  pwm.pinDuty( 6, pwm_duty_inactive );  // inactive duty cycle (127 PWM) on Pin 6 (Primary RW)
+    // pwm.pinDuty( 7, pwm_duty3 );  // computed duty cycle on Pin 7 (Secondary RW)
+    //}
 
     storeTorqueAndIncrementIndex(commandedTorqueHistory, &currentIndex, commandedTorque_mNm, lengthOfHistory);
   }else {
