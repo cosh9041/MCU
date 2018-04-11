@@ -7,7 +7,7 @@ Servo myservo;
 #include <fi_util.h>
 #include <data_util.h>
 #include <SPI.h>  
-#include <Pixy.h>
+#include <PixySPI_SS.h>
 #include <PID_v1.h>
 #include <DuePWM.h>
 #include <stdio.h>
@@ -16,10 +16,15 @@ Servo myservo;
 
 #define PWM_FREQ1  6600
 #define PWM_FREQ2  6600
+#define PRIMARY_FS_PIN 46
+#define SECONDARY_FS_PIN 48
+#define CS_PIN 50
 
 DuePWM pwm( PWM_FREQ1, PWM_FREQ2 );
 
-Pixy pixy;
+PixySPI_SS finePixy1(PRIMARY_FS_PIN);
+PixySPI_SS finePixy2(SECONDARY_FS_PIN);
+PixySPI_SS coarsePixy(CS_PIN);
 
 //Define Variables we'll be connecting to
 double deltaThetaRadFine1, deltaThetaRadFine2;
@@ -42,7 +47,9 @@ void setup()
 { 
   Serial.begin(9600);
   Serial.print("Starting...\n");
-  pixy.init();
+  finePixy1.init();
+  finePixy2.init();
+  coarsePixy.init();
   Setpoint = 0;
   //turn the PID on
   myPID.SetMode(AUTOMATIC);
@@ -54,8 +61,15 @@ void setup()
   pwm.pinFreq1( 6 );  // Pin 6 freq set to "pwm_freq1" on clock A
   pwm.pinFreq2( 7 );  // Pin 7 freq set to "pwm_freq2" on clock B
 
-  //Select Initial Pixy
-  digitalWrite(46,HIGH);
+  // Initialize Pixy's
+  digitalWrite(CS_PIN,HIGH);
+  digitalWrite(PRIMARY_FS_PIN,HIGH);
+  digitalWrite(SECONDARY_FS_PIN,HIGH);\
+  
+  // Set pin modes for pixy
+  pinMode(46, OUTPUT);
+  pinMode(48, OUTPUT);
+  pinMode(50, OUTPUT);
 
   // Sets the resolution of the ADC for rw speed feedback to be 12 bits (4096 bins). 
   analogReadResolution(12);
@@ -89,12 +103,15 @@ uint32_t pwm_duty3;
 static int i = 0;
 int k;
 char buf[32];
-uint16_t blocks;     
+uint16_t blocks;
+uint16_t fineBlocks;
+uint16_t coarseBlocks;     
 
 // Pixy conversions
 double const convertPixToDegCoarse = 0.2748;
 double const convertPixToDegFine = 0.0522;
 double const centerOffsetDegFine = 160*convertPixToDegFine;
+double const centerOffsetDegCoarse =160*convertPixToDegCoarse;
 double const convertDegToRad = 3.1415926535897932384626433832795/180; 
 
 // Reaction Wheel speed conversions
@@ -145,16 +162,17 @@ void loop()
 
   getAngularAcceleration(orderedRWSpeedHistory, orderedTimeStampHistory, angularAccel, lengthOfHistory);
 
-  digitalWrite(46,LOW);
-
+  
   // NOTE: Pixy.getBlocks does a dirty nasty thing and returns 0 both when there are no blocks
   // detected AND when there is no information. This ambiguous case cost us a lot of wasted time
   if ((millis() - timeLastReadPixy) > 20) {
-    blocks = pixy.getBlocks();// NOTE: TO run on board which is not pixy enabled, comment this line out
+    fineBlocks = finePixy2.getBlocks();// NOTE: TO run on board which is not pixy enabled, comment this line out
+    coarseBlocks = coarsePixy.getBlocks();
     timeLastReadPixy = millis();
   }
 
-  if (blocks) {
+  if (fineBlocks) {
+  
     // uncomment out these lines to inject a rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
     //if (millis() > 40000 && !fiState->cmdToFaultRW) {
     //  Serial.println("faulting");
@@ -165,9 +183,9 @@ void loop()
     //  fiState->cmdToFaultRW = 0;
     //}
 
-    deltaThetaRadFine1 = ((pixy.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
-    fsInjection(&deltaThetaRadFine1, fiState);
-    deltaThetaRad = deltaThetaRadFine1;
+    deltaThetaRadFine2 = ((finePixy2.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
+    fsInjection(&deltaThetaRadFine2, fiState);
+    deltaThetaRad = deltaThetaRadFine2;
     
     faultManagement(fmState, angularAccel, orderedCommandedTorqueHistory,
 		    lengthOfHistory, MOI);
@@ -179,7 +197,7 @@ void loop()
     commandedTorque_mNm = injectRWFault(fiState, commandedTorque_mNm, rwSpeedRad, p1, p2, delta_omega, 
       fmState->activeRW == 1);
 
-    pwm_duty = (commandedTorque_mNm*15*mNm_to_mA*mA_to_duty + pwmOffset)*duty_to_bin;
+    pwm_duty = (commandedTorque_mNm*mNm_to_mA*mA_to_duty + pwmOffset)*duty_to_bin;
 
     if (pwm_duty >230) {
       pwm_duty = 230;
@@ -192,11 +210,48 @@ void loop()
     pwm.pinDuty( 6, pwm_duty3 );  // computed duty cycle on Pin 6
     
     storeTorqueAndIncrementIndex(commandedTorqueHistory, &currentIndex, commandedTorque_mNm, lengthOfHistory);
-  } else {
+  }else if(coarseBlocks){
+    // uncomment out these lines to inject a rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
+    //if (millis() > 40000 && !fiState->cmdToFaultRW) {
+    //  Serial.println("faulting");
+    //  fiState->cmdToFaultRW = 1;
+    //}
+    //if (millis() > 100000 && fiState->cmdToFaultRW) {
+    //  Serial.println("Unfaulting");
+    //  fiState->cmdToFaultRW = 0;
+    //}
+
+    deltaThetaRad = ((coarsePixy.blocks[0].x)*convertPixToDegCoarse - centerOffsetDegCoarse)*convertDegToRad;
+    
+    faultManagement(fmState, angularAccel, orderedCommandedTorqueHistory,
+        lengthOfHistory, MOI);
+
+    // call to Compute assigns output to variable commandedTorque_mNm via pointers
+    myPID.Compute(); 
+
+    // TODO: Test injection strength and tune for delta_omega
+    commandedTorque_mNm = injectRWFault(fiState, commandedTorque_mNm, rwSpeedRad, p1, p2, delta_omega, 
+      fmState->activeRW == 1);
+
+    pwm_duty = (commandedTorque_mNm*mNm_to_mA*mA_to_duty + pwmOffset)*duty_to_bin;
+
+    if (pwm_duty >230) {
+      pwm_duty = 230;
+    }
+    else if (pwm_duty <26) {
+      pwm_duty = 26; 
+    }
+    pwm_duty2 = round(pwm_duty);
+    pwm_duty3 = (uint32_t) pwm_duty2;
+    pwm.pinDuty( 6, pwm_duty3 );  // computed duty cycle on Pin 6
+    
+    storeTorqueAndIncrementIndex(commandedTorqueHistory, &currentIndex, commandedTorque_mNm, lengthOfHistory);
+  }else {
     // Serial.println("No Blocks detected");
     // Serial.println(commandedTorque_mNm,5);
     // If we do not pick up blocks set PWM to 50% to shut off motors
     pwm_duty3 = 127;
     pwm.pinDuty( 6, pwm_duty3 );
   }
+  Serial.println(pwm_duty3);
 }
