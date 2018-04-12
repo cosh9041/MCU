@@ -176,19 +176,34 @@ void loop()
   if (fineBlocks) {
   
     // uncomment out these lines to inject a rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
-    //if (millis() > 40000 && !fiState->cmdToFaultRW) {
-    //  Serial.println("faulting");
-    //  fiState->cmdToFaultRW = 1;
-    //}
-    //if (millis() > 100000 && fiState->cmdToFaultRW) {
-    //  Serial.println("Unfaulting");
-    //  fiState->cmdToFaultRW = 0;
-    //}
+    // if (millis() > 40000 && !fiState->cmdToFaultRW) {
+    //   Serial.println("faulting");
+    //   fiState->cmdToFaultRW = 1;
+    // }
+    // if (millis() > 100000 && fiState->cmdToFaultRW) {
+    //   Serial.println("Unfaulting");
+    //   fiState->cmdToFaultRW = 0;
+    // }
+
+    // testing faulting fine sensor; set on a timer to visually see the MockSat Fault
+    if (millis() > 40000 && fiState->cmdToFaultFS) {
+      Serial.println("Unfaulting");
+      fiState->cmdToFaultFS = 0;
+    }
+    else if (millis() > 20000 && !fiState->cmdToFaultFS) {
+      Serial.println("faulting");
+      Serial.print("\n\n\n\n\n\n\n\n");
+      fiState->cmdToFaultFS = 1;
+    }
+    
 
     deltaThetaRadFine2 = ((finePixy2.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
-    fsInjection(&deltaThetaRadFine2, fiState);
-    deltaThetaRad = deltaThetaRadFine2;
-    
+    Serial.println("DeltaTheta  , DeltaTheta Faulted");
+    Serial.print(deltaThetaRadFine2);
+    Serial.print(" , ");
+    deltaThetaRad = fsInjection(deltaThetaRadFine2, fiState);
+    Serial.println(deltaThetaRad);
+
     faultManagement(fmState, angularAccel, orderedCommandedTorqueHistory,
 		    lengthOfHistory, MOI);
 

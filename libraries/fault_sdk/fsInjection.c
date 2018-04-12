@@ -12,9 +12,10 @@
 #include "fsInjection.h"
 
 
-void fsInjection(double *deltaTheta, FiState *fiState)
+double fsInjection(double deltaTheta, FiState *fiState)
 {   
 	if (fiState->cmdToFaultFS){
-		*deltaTheta += fiState->fsBias;
+		deltaTheta += fiState->fsBias;
 	}
+	return deltaTheta;
 }

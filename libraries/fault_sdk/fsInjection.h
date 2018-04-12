@@ -14,7 +14,7 @@ extern "C" {
 
 #include <fi_util.h>
 
-void fsInjection(double *deltaTheta, FiState *fiState);
+double fsInjection(double deltaTheta, FiState *fiState);
 
 #ifdef __cplusplus
 }
