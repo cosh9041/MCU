@@ -186,16 +186,16 @@ void loop()
     // }
 
     // testing faulting fine sensor; set on a timer to visually see the MockSat Fault
-    if (millis() > 40000 && fiState->cmdToFaultFS) {
-      Serial.println("Unfaulting");
-      fiState->cmdToFaultFS = 0;
-    }
-    else if (millis() > 20000 && !fiState->cmdToFaultFS) {
-      Serial.println("faulting");
-      Serial.print("\n\n\n\n\n\n\n\n");
-      fiState->cmdToFaultFS = 1;
-    }
-    
+//    if (millis() > 150000 && fiState->cmdToFaultFS) {
+//      Serial.println("Unfaulting");
+//      fiState->cmdToFaultFS = 0;
+//    }
+//    else if (millis() > 30000 && millis() < 150000 && !fiState->cmdToFaultFS) {
+//      Serial.println("faulting");
+//      Serial.print("\n\n\n\n\n\n\n\n");
+//      fiState->cmdToFaultFS = 1;
+//    }
+//    
 
     deltaThetaRadFine2 = ((finePixy2.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
     Serial.println("DeltaTheta  , DeltaTheta Faulted");

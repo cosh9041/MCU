@@ -11,7 +11,6 @@
 #include <inttypes.h>
 #include "fsInjection.h"
 
-
 double fsInjection(double deltaTheta, FiState *fiState)
 {   
 	if (fiState->cmdToFaultFS){
