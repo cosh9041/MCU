@@ -18,18 +18,20 @@ Servo myservo;
 #define PWM_FREQ1  6600
 #define PWM_FREQ2  6600
 #define LOGIC_ANALYZER_PIN 33
-#define PRIMARY_MOTOR_PIN 29
-#define REDUNDANT_MOTOR_PIN 39
+#define PRIMARY_MOTOR_ENABLE_PIN 29
+#define REDUNDANT_MOTOR_ENABLE_PIN 39
+#define PRIMARY_MOTOR_PIN 6
+#define REDUNDANT_MOTOR_PIN 7
 
 // Pixy defines
-#define PRIMARY_FS_PIN 46
-#define SECONDARY_FS_PIN 48
+#define PRIMARY_FS_PIN 48
+#define SECONDARY_FS_PIN 46
 #define CS_PIN 50
 
 DuePWM pwm( PWM_FREQ1, PWM_FREQ2 );
 
-//PixySPI_SS finePixy1(PRIMARY_FS_PIN);
-PixySPI_SS finePixy2(SECONDARY_FS_PIN);
+PixySPI_SS finePixy1(PRIMARY_FS_PIN);
+//PixySPI_SS finePixy2(SECONDARY_FS_PIN);
 PixySPI_SS coarsePixy(CS_PIN);
 
 //Define Variables we'll be connecting to
@@ -53,8 +55,8 @@ void setup()
 { 
   Serial.begin(9600);
   Serial.print("Starting...\n");
-  //finePixy1.init();
-  finePixy2.init();
+  finePixy1.init();
+  //finePixy2.init();
   coarsePixy.init();
   Setpoint = 0;
   //turn the PID on
@@ -64,18 +66,18 @@ void setup()
   pwm.setFreq1( PWM_FREQ1 );
   pwm.setFreq2( PWM_FREQ2 );
 
-  pwm.pinFreq1( 6 );  // Pin 6 freq set to "pwm_freq1" on clock A
-  pwm.pinFreq2( 7 );  // Pin 7 freq set to "pwm_freq2" on clock B
+  pwm.pinFreq1(PRIMARY_MOTOR_PIN);  // Pin 6 freq set to "pwm_freq1" on clock A
+  pwm.pinFreq2(REDUNDANT_MOTOR_PIN);  // Pin 7 freq set to "pwm_freq2" on clock B
 
   // Initialize Pixy's
   digitalWrite(CS_PIN,HIGH);
   digitalWrite(PRIMARY_FS_PIN,HIGH);
-  digitalWrite(SECONDARY_FS_PIN,HIGH);\
+  digitalWrite(SECONDARY_FS_PIN,HIGH);
   
   // Set pin modes for pixy
-  pinMode(46, OUTPUT);
-  pinMode(48, OUTPUT);
-  pinMode(50, OUTPUT);
+  pinMode(PRIMARY_FS_PIN, OUTPUT);
+  pinMode(SECONDARY_FS_PIN, OUTPUT);
+  pinMode(CS_PIN, OUTPUT);
 
   // Sets the resolution of the ADC for rw speed feedback to be 12 bits (4096 bins). 
   analogReadResolution(12);
@@ -85,13 +87,13 @@ void setup()
   //written high and switching comes from the pwm signals sent to the motor controller
   //in the loop.
   digitalWrite(LOGIC_ANALYZER_PIN, HIGH); //set ref of logic analyzer to 3.3V
-  digitalWrite(REDUNDANT_MOTOR_PIN, LOW);  //drive redundant motor low (disabled)
-  digitalWrite(PRIMARY_MOTOR_PIN, HIGH); //drive primary motor high (enabled)
+  digitalWrite(REDUNDANT_MOTOR_ENABLE_PIN, LOW);  //drive redundant motor low (disabled)
+  digitalWrite(PRIMARY_MOTOR_ENABLE_PIN, HIGH); //drive primary motor high (enabled)
   delay(1000);
-  digitalWrite(REDUNDANT_MOTOR_PIN, HIGH); //cycle redundant motor high (enabled)
-  digitalWrite(PRIMARY_MOTOR_PIN,LOW); //cycle primary motor low (disabled)
+  digitalWrite(REDUNDANT_MOTOR_ENABLE_PIN, HIGH); //cycle redundant motor high (enabled)
+  digitalWrite(PRIMARY_MOTOR_ENABLE_PIN, LOW); //cycle primary motor low (disabled)
   delay(1000);
-  digitalWrite(PRIMARY_MOTOR_PIN,HIGH);//cycle primary motor high (enabled)
+  digitalWrite(PRIMARY_MOTOR_ENABLE_PIN, HIGH);//cycle primary motor high (enabled)
 
   initializeFaultManagementState(fmState);
   initializeFaultInjectState(fiState);
@@ -164,7 +166,9 @@ void loop() {
   // NOTE: Pixy.getBlocks does a dirty nasty thing and returns 0 both when there are no blocks
   // detected AND when there is no information. This ambiguous case cost us a lot of wasted time
   if ((millis() - timeLastReadPixy) > 20) {
-    fineBlocks2 = finePixy2.getBlocks();// NOTE: TO run on board which is not pixy enabled, comment this line out
+    // NOTE: TO run on board which is not pixy enabled, comment out the getBlocks() calls
+    fineBlocks1 = finePixy1.getBlocks();
+    //fineBlocks2 = finePixy2.getBlocks();// NOTE: TO run on board which is not pixy enabled, comment this line out
     coarseBlocks = coarsePixy.getBlocks();
     timeLastReadPixy = millis();
   }
@@ -179,21 +183,19 @@ void loop() {
     //   Serial.println("Unfaulting");
     //   fiState->cmdToFaultRW = 0;
     // }
-    deltaThetaRadFine2 = ((finePixy2.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
-    fsInjection(&deltaThetaRadFine2, fiState);
-    deltaThetaRad = deltaThetaRadFine2;
+    deltaThetaRadFine1 = ((finePixy1.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
+    fsInjection(&deltaThetaRadFine1, fiState);
+    deltaThetaRad = deltaThetaRadFine1;
 
     runFmAndControl();
-    
   } else if(coarseBlocks) {
     deltaThetaRadCoarse = ((coarsePixy.blocks[0].x)*convertPixToDegCoarse - centerOffsetDegCoarse)*convertDegToRad;
     deltaThetaRad = deltaThetaRadCoarse;
     runFmAndControl();
-
   } else {
     // If we do not pick up blocks set PWM to 50% to shut off motors
-    pwm.pinDuty( 6, pwm_duty_inactive );
-    pwm.pinDuty( 7, pwm_duty_inactive );
+    pwm.pinDuty(PRIMARY_MOTOR_PIN, pwm_duty_inactive);
+    pwm.pinDuty(REDUNDANT_MOTOR_PIN, pwm_duty_inactive);
   }
 }
 
@@ -222,16 +224,21 @@ void sendTorque() {
   pwm_duty2 = round(pwm_duty);
   pwm_duty3 = (uint32_t) pwm_duty2;
 
+  // Uncomment these lines to do a timed  switch to secondary rw
+  // if (millis() > 20000 && fmState->activeRW == 1) {
+  //   fmState->activeRW = 2;
+  // }
+
   // Testing switching b/w rw
   if (fmState->activeRW == 1) {
-    pwm.pinDuty( 6, pwm_duty3 );  // computed duty cycle on Pin 6 (Primary RW)
-    pwm.pinDuty( 7, pwm_duty_inactive );  // inactive duty cycle (127 PWM) on Pin 7 (Secondary RW)
+    pwm.pinDuty(PRIMARY_MOTOR_PIN, pwm_duty3);  // computed duty cycle on Pin 6 (Primary RW)
+    pwm.pinDuty(REDUNDANT_MOTOR_PIN, pwm_duty_inactive);  // inactive duty cycle (127 PWM) on Pin 7 (Secondary RW)
   } else if (fmState->activeRW == 2) {
-    pwm.pinDuty(6, pwm_duty_inactive); // inactive duty cycle (127 PWM) on Pin 6 (Primary RW)
-    pwm.pinDuty(7, pwm_duty3);         // computed duty cycle on Pin 7 (Secondary RW)
+    pwm.pinDuty(PRIMARY_MOTOR_PIN, pwm_duty_inactive); // inactive duty cycle (127 PWM) on Pin 6 (Primary RW)
+    pwm.pinDuty(REDUNDANT_MOTOR_PIN, pwm_duty3);         // computed duty cycle on Pin 7 (Secondary RW)
   } else {
-    pwm.pinDuty(6, pwm_duty_inactive); // inactive duty cycle (127 PWM) on Pin 6 (Primary RW)
-    pwm.pinDuty(7, pwm_duty_inactive); // computed duty cycle on Pin 7 (Secondary RW)
+    pwm.pinDuty(PRIMARY_MOTOR_PIN, pwm_duty_inactive); // inactive duty cycle (127 PWM) on Pin 6 (Primary RW)
+    pwm.pinDuty(REDUNDANT_MOTOR_PIN, pwm_duty_inactive); // computed duty cycle on Pin 7 (Secondary RW)
   }
 
   storeTorqueAndIncrementIndex(commandedTorqueHistory, &currentIndex, commandedTorque_mNm, lengthOfHistory);
