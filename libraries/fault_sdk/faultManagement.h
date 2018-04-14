@@ -15,8 +15,8 @@ extern "C" {
 
 #include <fm_util.h>
 
-void faultManagement(FmState *fmState, float *angularAccel, float *commandedTorque, double *fineDelTheta, double *coarseDelTheta,
-		uint16_t dataLength, float MOI);
+void faultManagement(FmState *fmState, float *rwSpeedHist, float *timeStampHisty, uint16_t rwDataLength, 
+		float *commandedTorque, double *fineDelTheta, double *coarseDelTheta, uint16_t sensorDataLength, float MOI);
 
 void manageNewFaultDetected(FmState *fmState);
 

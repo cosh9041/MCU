@@ -13,25 +13,25 @@
 #include <fm_util.h>
 #include "faultManagement.h"
 
-void faultManagement(FmState *fmState, float *angularAccel, float *commandedTorque, double *fineDelTheta, double *coarseDelTheta,
-		uint16_t dataLength, float MOI) {
+void faultManagement(FmState *fmState, float *rwSpeedHist, float *timeStampHist, uint16_t rwDataLength, 
+		float *commandedTorque, double *fineDelTheta, double *coarseDelTheta, uint16_t sensorDataLength, float MOI) {
 	if (fmState->isFaulted) {
 		manageFaultAlreadyDetected(fmState);
 		return;
 	}
 
-	float responseTorque[dataLength];
-	float frictionTorque[dataLength];
-	getResponseTorque(reactionWheelSpeedHistory, timeStampHistory, responseTorque, commandedTorque, frictionTorque,
-		dataLength, MOI);
+	float responseTorque[rwDataLength];
+	float frictionTorque[rwDataLength];
+	getResponseTorque(rwSpeedHist, timeStampHist, responseTorque, commandedTorque, frictionTorque,
+		rwDataLength, MOI);
 
-	uint8_t rwFaultDetected = faultCheckRW(fmState->faultType, frictionTorque, commandedTorque, dataLength); 
-	if (rwFaultDetected) {
+	uint8_t rwFaultDetected = faultCheckRW(fmState->faultType, frictionTorque, commandedTorque, rwDataLength); 
+	if (rwFaultDetected) 
 		fmState->faultType = 2;
-	uint8_t fsFaultDetected = faultCheckFS(fmState->faultType, coarseDelTheta, fineDelTheta, dataLength);
-	if (fsFaultDetected){
-		fmState->faultType = 1;
-	}
+	// uint8_t fsFaultDetected = faultCheckFS(fmState->faultType, coarseDelTheta, fineDelTheta, rwDataLength);
+	// if (fsFaultDetected){
+	// 	fmState->faultType = 1;
+	// }
 
 	/* fmState->faultType will be 0 if there is no fault, 1 if fs fault, 2 if RW*/
 	if (!fmState->faultType) {
@@ -90,12 +90,11 @@ void manageFaultAlreadyDetected(FmState *fmState) {
 }
 
 uint8_t checkThreshold(float *data_x, float *data_y, uint16_t length, float threshold) {
-//	float diff[length];
 	float meanDiff = 0;
 	for (int i = 0; i < length; i++) {
-		//diff[i] = fabsf(data_y[i] - data_x[i]);
 		meanDiff += fabsf(data_y[i] - data_x[i]);
 	}
+	meanDiff = meanDiff/length;
 	if (meanDiff > threshold) return 1;
 	return 0; 
 }
@@ -109,7 +108,7 @@ uint8_t faultCheckFS(FmState *fmState, double *coarseDelTheta, double *fineDelTh
 	uint8_t faultDetected, faultTimerActive;
 	
 	/*Run threshold check*/
-	faultDetected = checkThreshold(); //TODO: Impl check threshold w/ data. Tune for run time perf
+	//faultDetected = checkThreshold(); //TODO: Impl check threshold w/ data. Tune for run time perf
 
 	handleFaultStatus(fmState, faultDetected);
 }
@@ -125,28 +124,7 @@ void handleFaultStatus(FmState *fmState, uint8_t faultDetected) {
 		fmState->faultTimerActive = 1;
 	}
 	
-	if ((millis() - fmState->faultTimerStart) > 30000) {
+	if ((millis() - fmState->faultTimerStart) > fmState->timeToFault) {
 		fmState->faultTimerActive = 0;
-	}
-}
-
-
-uint8_t recovery(FmState *fmState)
-{
-	if (fmState->faultType == 0)
-	{
-		return 0;
-	} 
-	if (fmState->faultType == 1)
-	{
-		return 1;
-	}
-	if (fmState->faultType == 2)
-	{
-		return 2;
-	}
-	else
-	{
-		return 10;
 	}
 }

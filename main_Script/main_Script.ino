@@ -83,33 +83,36 @@ float const p1 = 0.0000335653965; // mNm/(rad/s), viscous friction
 float const p2 = 0.1303; // mNm, coloumb friction
 float MOI = 1; //MOI of RW, stubbed out for now
 float delta_omega = 15; // small delta near zero where we set torque to zero to simulate friction. TODO: Tune this value
-uint16_t const lengthOfHistory = 1000;
-// currentIndex points to the most recent data point. The last 100 data points are accumulated "behind"
-// this index. For example, if the currentIndex is 55, the order (in terms of recency) of the stored indicies
+uint16_t const rwDataLength = 150;
+uint16_t const sensorDataLength = 50;
+// rwStackPtr points to the most recent data point. The last 100 data points are accumulated "behind"
+// this index. For example, if the rwStackPtr is 55, the order (in terms of recency) of the stored indicies
 // is 55....0...99...56. I.e. the most recently stored index is 55 (just stored), and the oldest stored index is 56.
-uint16_t currentIndex = 0;
+uint16_t rwStackPtr = 0;
+uint16_t sensorStackPtr = 0;
 
 //TODO: Determine units and ideal length for these. 
-float commandedTorqueHistory[lengthOfHistory];
-float reactionWheelSpeedHistory[lengthOfHistory];
-float timeStampHistory[lengthOfHistory];
-float orderedRWSpeedHistory[lengthOfHistory];
-float orderedCommandedTorqueHistory[lengthOfHistory];
-float orderedTimeStampHistory[lengthOfHistory];
-float angularAccel[lengthOfHistory-1];
-double fineDeltaTheta[lengthOfHistory];
-double coarseDeltaTheta[lengthOfHistory];
+float commandedTorqueHistory[rwDataLength];
+float rwSpeedHist[rwDataLength];
+float timeStampHistory[rwDataLength];
+float orderedRWSpeedHistory[rwDataLength];
+float orderedCommandedTorqueHistory[rwDataLength];
+float orderedTimeStampHistory[rwDataLength];
+float angularAccel[rwDataLength-1];
+double fineDeltaTheta[sensorDataLength];
+double coarseDeltaTheta[sensorDataLength];
 
 // Utility function specifications. Implementations are below loop()
 void sendTorque();
 void getRWSpeed(float *rwSpeedRad, uint16_t analogReading);
-void runFmAndControl();
+void runControl();
 void injectTimedRWFault();
 void injectTimedFSFault();
 void getPrimaryFSReading();
 void getSecondaryFSReading();
 void getCSReading();
 void getBlockReading();
+void runFM();
 
 void setup() { 
   Serial.begin(9600);
@@ -159,23 +162,21 @@ void setup() {
   delay(1000);
   digitalWrite(PRIMARY_MOTOR_ENABLE_PIN, HIGH);//cycle primary motor high (enabled)
 
-  initializeFaultManagementState(fmState, lengthOfHistory-1, p1, p2);
+  initializeFaultManagementState(fmState, rwDataLength-1, p1, p2);
   initializeFaultInjectState(fiState);
 } 
 
 void loop() {
   getRWSpeed(&rwSpeedRad, analogRead(A0));
 
-  storeRWSpeed(reactionWheelSpeedHistory, timeStampHistory, currentIndex, rwSpeedRad, millis());
+  storeRWSpeed(rwSpeedHist, timeStampHistory, rwStackPtr, rwSpeedRad, millis());
 
-  // Stores ordered lists of last n = `lengthOfHistory` data points, with most recent being at index 0
-  getOrderedHistory(reactionWheelSpeedHistory, orderedRWSpeedHistory, lengthOfHistory, currentIndex);
-  getOrderedHistory(commandedTorqueHistory, orderedCommandedTorqueHistory, lengthOfHistory, currentIndex);
-  getOrderedHistory(timeStampHistory, orderedTimeStampHistory, lengthOfHistory, currentIndex);
+  // Stores ordered lists of last n = `rwDataLength` data points, with most recent being at index 0
+  getOrderedHistory(rwSpeedHist, orderedRWSpeedHistory, rwDataLength, rwStackPtr);
+  getOrderedHistory(commandedTorqueHistory, orderedCommandedTorqueHistory, rwDataLength, rwStackPtr);
+  getOrderedHistory(timeStampHistory, orderedTimeStampHistory, rwDataLength, rwStackPtr);
 
-  // faultManagement will update fmState struct contents to reflect fault detected or not
-  faultManagement(fmState, angularAccel, orderedCommandedTorqueHistory, fineDeltaTheta, coarseDeltaTheta,
-	    lengthOfHistory, MOI);
+  runFM();
 
   // NOTE: Pixy.getBlocks does a dirty nasty thing and returns 0 both when there are no blocks
   // detected AND when there is no information. This ambiguous case cost us a lot of wasted time
@@ -191,11 +192,10 @@ void loop() {
     //injectTimedRWFault();
     //injectTimedFSFault();
 
-    runFmAndControl();
+    runControl();
   } else if(coarseBlocks) {
-    Serial.println("using coarse blocks because no fine 1 or 2");
     deltaThetaRad = deltaThetaRadCoarse;
-    runFmAndControl();
+    runControl();
   } else {
     // If we do not pick up blocks set PWM to 50% to shut off motors
     pwm.pinDuty(PRIMARY_MOTOR_PIN, pwm_duty_inactive);
@@ -203,8 +203,13 @@ void loop() {
   }
 }
 
-void runFmAndControl() {
+void runFM() {
+  // faultManagement will update fmState struct contents to reflect fault detected or not
+  faultManagement(fmState, orderedRWSpeedHistory, orderedTimeStampHistory, rwDataLength, orderedCommandedTorqueHistory, fineDeltaTheta, coarseDeltaTheta,
+	    sensorDataLength, MOI);
+}
 
+void runControl() {
   // call to Compute assigns output to variable commandedTorque_mNm via pointers
   myPID.Compute(); 
 
@@ -243,7 +248,7 @@ void sendTorque() {
     pwm.pinDuty(REDUNDANT_MOTOR_PIN, pwm_duty_inactive); // computed duty cycle on Pin 7 (Secondary RW)
   }
 
-  storeTorqueAndIncrementIndex(commandedTorqueHistory, &currentIndex, commandedTorque_mNm, lengthOfHistory);
+  storeTorqueAndIncrementIndex(commandedTorqueHistory, &rwStackPtr, commandedTorque_mNm, rwDataLength);
 }
 
 void getBlockReading() {
@@ -279,7 +284,7 @@ void getSecondaryFSReading() {
 }
 
 void getCSReading() {
-    deltaThetaRadCoarse = ((coarsePixy.blocks[0].x)*convertPixToDegCoarse - centerOffsetDegCoarse)*convertDegToRad;
+  deltaThetaRadCoarse = ((coarsePixy.blocks[0].x)*convertPixToDegCoarse - centerOffsetDegCoarse)*convertDegToRad;
 }
 
 void injectTimedRWFault() {
