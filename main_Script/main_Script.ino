@@ -76,13 +76,13 @@ double const convertDegToRad = 3.1415926535897932384626433832795/180;
 
 // Reaction wheel speed variable
 uint16_t rwSpeedBin;
-float rwSpeedRad; 
+double rwSpeedRad; 
 
 // Physical characteristics
-float const p1 = 0.0000335653965; // mNm/(rad/s), viscous friction 
-float const p2 = 0.1303; // mNm, coloumb friction
-float MOI = 1; //MOI of RW, stubbed out for now
-float delta_omega = 15; // small delta near zero where we set torque to zero to simulate friction. TODO: Tune this value
+double const p1 = 0.0000335653965; // mNm/(rad/s), viscous friction 
+double const p2 = 0.1303; // mNm, coloumb friction
+double MOI = 1; //MOI of RW, stubbed out for now
+double delta_omega = 15; // small delta near zero where we set torque to zero to simulate friction. TODO: Tune this value
 uint16_t const rwDataLength = 150;
 uint16_t const sensorDataLength = 50;
 // rwStackPtr points to the most recent data point. The last 100 data points are accumulated "behind"
@@ -92,19 +92,19 @@ uint16_t rwStackPtr = 0;
 uint16_t sensorStackPtr = 0;
 
 //TODO: Determine units and ideal length for these. 
-float commandedTorqueHistory[rwDataLength];
-float rwSpeedHist[rwDataLength];
-float timeStampHistory[rwDataLength];
-float orderedRWSpeedHistory[rwDataLength];
-float orderedCommandedTorqueHistory[rwDataLength];
-float orderedTimeStampHistory[rwDataLength];
-float angularAccel[rwDataLength-1];
+double commandedTorqueHistory[rwDataLength];
+double rwSpeedHist[rwDataLength];
+double timeStampHistory[rwDataLength];
+double orderedRWSpeedHistory[rwDataLength];
+double orderedCommandedTorqueHistory[rwDataLength];
+double orderedTimeStampHistory[rwDataLength];
+double angularAccel[rwDataLength-1];
 double fineDeltaTheta[sensorDataLength];
 double coarseDeltaTheta[sensorDataLength];
 
 // Utility function specifications. Implementations are below loop()
 void sendTorque();
-void getRWSpeed(float *rwSpeedRad, uint16_t analogReading);
+void getRWSpeed(double *rwSpeedRad, uint16_t analogReading);
 void runControl();
 void injectTimedRWFault();
 void injectTimedFSFault();
@@ -269,7 +269,7 @@ void getBlockReading() {
   }
 }
 
-void getRWSpeed(float *rwSpeedRad, uint16_t analogReading) {
+void getRWSpeed(double *rwSpeedRad, uint16_t analogReading) {
   // hard coded in the '- 81' portion. This tunes down to 0 rads. most likely our system isn't perfect and is causing this. Not sure tho
   *rwSpeedRad = (28000/4096*analogReading - 14000)*2*PI/60 - 81;
 }
