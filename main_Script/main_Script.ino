@@ -150,6 +150,8 @@ float angularAccel[lengthOfHistory-1];
 void sendTorque();
 void getRWSpeed(float *rwSpeedRad, uint16_t analogReading);
 void runFmAndControl();
+void injectTimedRWFault();
+void injectTimedFSFault();
 
 void loop() {
   getRWSpeed(&rwSpeedRad, analogRead(A0));
@@ -173,24 +175,20 @@ void loop() {
     timeLastReadPixy = millis();
   }
 
-  if (fineBlocks2) {
-    // uncomment out these lines to inject a rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
-    // if (millis() > 40000 && !fiState->cmdToFaultRW && millis() < 80000) {
-    //   Serial.println("faulting");
-    //   fiState->cmdToFaultRW = 1;
-    // }
-    // if (millis() > 100000 && fiState->cmdToFaultRW) {
-    //   Serial.println("Unfaulting");
-    //   fiState->cmdToFaultRW = 0;
-    // }
+  if (fineBlocks1) {
     deltaThetaRadFine1 = ((finePixy1.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
     fsInjection(&deltaThetaRadFine1, fiState);
     deltaThetaRad = deltaThetaRadFine1;
+
+    // uncomment out these lines to inject a fs or rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
+    //injectTimedRWFault();
+    //injectTimedFSFault();
 
     runFmAndControl();
   } else if(coarseBlocks) {
     deltaThetaRadCoarse = ((coarsePixy.blocks[0].x)*convertPixToDegCoarse - centerOffsetDegCoarse)*convertDegToRad;
     deltaThetaRad = deltaThetaRadCoarse;
+
     runFmAndControl();
   } else {
     // If we do not pick up blocks set PWM to 50% to shut off motors
@@ -247,4 +245,27 @@ void sendTorque() {
 void getRWSpeed(float *rwSpeedRad, uint16_t analogReading) {
   // hard coded in the '- 81' portion. This tunes down to 0 rads. most likely our system isn't perfect and is causing this. Not sure tho
   *rwSpeedRad = (28000/4096*analogReading - 14000)*2*PI/60 - 81;
+}
+
+void injectTimedRWFault() {
+  // uncomment out these lines to inject a rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
+  if (millis() > 40000 && !fiState->cmdToFaultRW && millis() < 80000) {
+    Serial.println("faulting rw");
+    fiState->cmdToFaultRW = 1;
+  }
+  if (millis() > 100000 && fiState->cmdToFaultRW) {
+    Serial.println("Unfaulting rw");
+    fiState->cmdToFaultRW = 0;
+  }
+}
+
+void injectTimedFSFault() {
+  if (millis() > 40000 && !fiState->cmdToFaultFS && millis() < 80000) {
+    Serial.println("faulting fs");
+    fiState->cmdToFaultFS = 1;
+  }
+  if (millis() > 100000 && fiState->cmdToFaultFS) {
+    Serial.println("Unfaulting fs");
+    fiState->cmdToFaultFS = 0;
+  }
 }
