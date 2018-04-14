@@ -20,9 +20,9 @@ uint8_t faultCheckFS() {
 void faultManagement(FmState *fmState, float *reactionWheelSpeedHistory, float *timeStampHistory,
  	float *commandedTorque, uint16_t dataLength, float MOI) {
 
-	float responseTorque[dataLength-1];
-	getResponseTorque(reactionWheelSpeedHistory, timeStampHistory, responseTorque,
-		dataLength, MOI);
+	// float responseTorque[dataLength-1];
+	// getResponseTorque(reactionWheelSpeedHistory, timeStampHistory, responseTorque,
+	// 	dataLength, MOI);
 
 	if (fmState->isFaulted) {
 		manageFaultAlreadyDetected(fmState);

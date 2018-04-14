@@ -34,6 +34,8 @@ PixySPI_SS finePixy1(PRIMARY_FS_PIN);
 PixySPI_SS finePixy2(SECONDARY_FS_PIN);
 PixySPI_SS coarsePixy(CS_PIN);
 
+unsigned long timeLastReadPixy = 0;
+
 //Define Variables we'll be connecting to
 double deltaThetaRadFine1, deltaThetaRadFine2;
 double deltaThetaRadCoarse;
@@ -48,61 +50,6 @@ FmState fmBase;
 FmState *fmState = &fmBase;
 FiState fiBase;
 FiState *fiState = &fiBase;
-
-unsigned long timeLastReadPixy = 0;
-
-void setup() 
-{ 
-  Serial.begin(9600);
-  Serial.print("Starting...\n");
-  finePixy1.init();
-  finePixy2.init();
-  coarsePixy.init();
-  Setpoint = 0;
-  //turn the PID on
-  myPID.SetMode(AUTOMATIC);
-
-  // Initialize Pixy's
-  digitalWrite(CS_PIN,HIGH);
-  digitalWrite(PRIMARY_FS_PIN,HIGH);
-  digitalWrite(SECONDARY_FS_PIN,HIGH);
-
-  //Configure PWM for motors
-  pwm.setFreq1( PWM_FREQ1 );
-  pwm.setFreq2( PWM_FREQ2 );
-
-  pwm.pinFreq1(PRIMARY_MOTOR_PIN);  // Pin 6 freq set to "pwm_freq1" on clock A
-  pwm.pinFreq2(REDUNDANT_MOTOR_PIN);  // Pin 7 freq set to "pwm_freq2" on clock B
-
-  // Initialize Pixy's
-  digitalWrite(CS_PIN,HIGH);
-  digitalWrite(PRIMARY_FS_PIN,HIGH);
-  digitalWrite(SECONDARY_FS_PIN,HIGH);
-  
-  // Set pin modes for pixy
-  pinMode(PRIMARY_FS_PIN, OUTPUT);
-  pinMode(SECONDARY_FS_PIN, OUTPUT);
-  pinMode(CS_PIN, OUTPUT);
-
-  // Sets the resolution of the ADC for rw speed feedback to be 12 bits (4096 bins). 
-  analogReadResolution(12);
-  pinMode(A0, INPUT);
-
-  //Enable Primary Motor Cycle for Initialization; both motor controllers are 
-  //written high and switching comes from the pwm signals sent to the motor controller
-  //in the loop.
-  digitalWrite(LOGIC_ANALYZER_PIN, HIGH); //set ref of logic analyzer to 3.3V
-  digitalWrite(REDUNDANT_MOTOR_ENABLE_PIN, LOW);  //drive redundant motor low (disabled)
-  digitalWrite(PRIMARY_MOTOR_ENABLE_PIN, HIGH); //drive primary motor high (enabled)
-  delay(1000);
-  digitalWrite(REDUNDANT_MOTOR_ENABLE_PIN, HIGH); //cycle redundant motor high (enabled)
-  digitalWrite(PRIMARY_MOTOR_ENABLE_PIN, LOW); //cycle primary motor low (disabled)
-  delay(1000);
-  digitalWrite(PRIMARY_MOTOR_ENABLE_PIN, HIGH);//cycle primary motor high (enabled)
-
-  initializeFaultManagementState(fmState);
-  initializeFaultInjectState(fiState);
-} 
 
 //conversions for torques to PWM bins
 double mNm_to_mA = 1000.0/8.4;
@@ -160,6 +107,59 @@ void injectTimedFSFault();
 void getPrimaryFSReading();
 void getSecondaryFSReading();
 void getCSReading();
+void getBlockReading();
+
+void setup() { 
+  Serial.begin(9600);
+  Serial.print("Starting...\n");
+  finePixy1.init();
+  finePixy2.init();
+  coarsePixy.init();
+  Setpoint = 0;
+  //turn the PID on
+  myPID.SetMode(AUTOMATIC);
+
+  // Initialize Pixy's
+  digitalWrite(CS_PIN,HIGH);
+  digitalWrite(PRIMARY_FS_PIN,HIGH);
+  digitalWrite(SECONDARY_FS_PIN,HIGH);
+
+  //Configure PWM for motors
+  pwm.setFreq1( PWM_FREQ1 );
+  pwm.setFreq2( PWM_FREQ2 );
+
+  pwm.pinFreq1(PRIMARY_MOTOR_PIN);  // Pin 6 freq set to "pwm_freq1" on clock A
+  pwm.pinFreq2(REDUNDANT_MOTOR_PIN);  // Pin 7 freq set to "pwm_freq2" on clock B
+
+  // Initialize Pixy's
+  digitalWrite(CS_PIN,HIGH);
+  digitalWrite(PRIMARY_FS_PIN,HIGH);
+  digitalWrite(SECONDARY_FS_PIN,HIGH);
+  
+  // Set pin modes for pixy
+  pinMode(PRIMARY_FS_PIN, OUTPUT);
+  pinMode(SECONDARY_FS_PIN, OUTPUT);
+  pinMode(CS_PIN, OUTPUT);
+
+  // Sets the resolution of the ADC for rw speed feedback to be 12 bits (4096 bins). 
+  analogReadResolution(12);
+  pinMode(A0, INPUT);
+
+  //Enable Primary Motor Cycle for Initialization; both motor controllers are 
+  //written high and switching comes from the pwm signals sent to the motor controller
+  //in the loop.
+  digitalWrite(LOGIC_ANALYZER_PIN, HIGH); //set ref of logic analyzer to 3.3V
+  digitalWrite(REDUNDANT_MOTOR_ENABLE_PIN, LOW);  //drive redundant motor low (disabled)
+  digitalWrite(PRIMARY_MOTOR_ENABLE_PIN, HIGH); //drive primary motor high (enabled)
+  delay(1000);
+  digitalWrite(REDUNDANT_MOTOR_ENABLE_PIN, HIGH); //cycle redundant motor high (enabled)
+  digitalWrite(PRIMARY_MOTOR_ENABLE_PIN, LOW); //cycle primary motor low (disabled)
+  delay(1000);
+  digitalWrite(PRIMARY_MOTOR_ENABLE_PIN, HIGH);//cycle primary motor high (enabled)
+
+  initializeFaultManagementState(fmState, lengthOfHistory-1, p1, p2);
+  initializeFaultInjectState(fiState);
+} 
 
 void loop() {
   getRWSpeed(&rwSpeedRad, analogRead(A0));
@@ -178,21 +178,7 @@ void loop() {
   // NOTE: Pixy.getBlocks does a dirty nasty thing and returns 0 both when there are no blocks
   // detected AND when there is no information. This ambiguous case cost us a lot of wasted time
   if ((millis() - timeLastReadPixy) > 20) {
-    // NOTE: TO run on board which is not pixy enabled, comment out the getBlocks() calls
-    fineBlocks1 = finePixy1.getBlocks(); 
-    if (fineBlocks1) {
-      getPrimaryFSReading();
-    }
-
-    fineBlocks2 = finePixy2.getBlocks();// NOTE: TO run on board which is not pixy enabled, comment this line out
-    if (fineBlocks2) {
-      getSecondaryFSReading();
-    }
-
-    coarseBlocks = coarsePixy.getBlocks();
-    if (coarseBlocks) {
-      getCSReading();
-    }
+    getBlockReading();
     timeLastReadPixy = millis();
   }
 
@@ -255,6 +241,24 @@ void sendTorque() {
   }
 
   storeTorqueAndIncrementIndex(commandedTorqueHistory, &currentIndex, commandedTorque_mNm, lengthOfHistory);
+}
+
+void getBlockReading() {
+  // NOTE: TO run on board which is not pixy enabled, comment out the getBlocks() calls
+  fineBlocks1 = finePixy1.getBlocks(); 
+  if (fineBlocks1) {
+    getPrimaryFSReading();
+  }
+
+  fineBlocks2 = finePixy2.getBlocks();// NOTE: TO run on board which is not pixy enabled, comment this line out
+  if (fineBlocks2) {
+    getSecondaryFSReading();
+  }
+
+  coarseBlocks = coarsePixy.getBlocks();
+  if (coarseBlocks) {
+    getCSReading();
+  }
 }
 
 void getRWSpeed(float *rwSpeedRad, uint16_t analogReading) {
