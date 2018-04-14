@@ -182,7 +182,7 @@ void loop() {
 
     // uncomment out these lines to inject a fs or rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
     //injectTimedRWFault();
-    injectTimedFSFault();
+    //injectTimedFSFault();
 
     runFmAndControl();
   } else if(coarseBlocks) {
