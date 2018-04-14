@@ -18,8 +18,8 @@
 //		wheel speed in rad/s. p1 and p2 should be determined by empirical analysis
 //		of reaction wheel friction
 //	-I: Moment of inertia of reaction wheel
-float calcInducedFriction(float omega, float p1, float p2) {
-	float induced;
+double calcInducedFriction(double omega, double p1, double p2) {
+	double induced;
 	if (omega < 0)
 		induced = p1*omega - p2*5;
 	if (omega > 0)
@@ -30,8 +30,8 @@ float calcInducedFriction(float omega, float p1, float p2) {
 // returns an injected torque value:
 // Variables [All units are SI units]:
 //	-isPrimaryRWactive: Should be 1 if primary reaction wheel is active, 0 otherwise
-float injectRWFault(FiState *fiState, float tau_c, float omega, float p1, float p2, float delta_omega, uint8_t primaryRWActive) {
-	float tau_hat_c, tau_hat_f;
+double injectRWFault(FiState *fiState, double tau_c, double omega, double p1, double p2, double delta_omega, uint8_t primaryRWActive) {
+	double tau_hat_c, tau_hat_f;
 	if (primaryRWActive && fiState->cmdToFaultRW) {
 		if (omega < delta_omega && omega > -delta_omega) {
 			// If the reaction wheel speed is close to 0, then we actually want to just 

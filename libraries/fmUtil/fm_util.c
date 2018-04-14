@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "fm_util.h"
 
-void initializeFaultManagementState(FmState *fmState, uint16_t size_of_ma, float p1, float p2) {
+void initializeFaultManagementState(FmState *fmState, uint16_t size_of_ma, double p1, double p2) {
   fmState->isFaulted = 0;
   fmState->isRecovering = 0;
   fmState->faultType = 0;
