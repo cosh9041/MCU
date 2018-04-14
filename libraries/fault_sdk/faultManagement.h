@@ -15,7 +15,7 @@ extern "C" {
 
 #include <fm_util.h>
 
-void faultManagement(FmState *fmState, float *angularAccel, float *commandedTorque,
+void faultManagement(FmState *fmState, float *angularAccel, float *commandedTorque, double *fineDelTheta, double *coarseDelTheta,
 		uint16_t dataLength, float MOI);
 
 void manageNewFaultDetected(FmState *fmState);
@@ -26,7 +26,7 @@ unsigned char checkThreshold();
 
 uint8_t faultCheckRW(FmState *fmState, float *angularAccel, float *commandedTorque, uint16_t length, float MOI);
 
-uint8_t faultCheckFS(FmState *fmState, float *coarseDelTheta, float *fineDelTheta, uint16_t length);
+uint8_t faultCheckFS(FmState *fmState, double *coarseDelTheta, double *fineDelTheta, uint16_t length);
 
 unsigned char faultCheck();
 

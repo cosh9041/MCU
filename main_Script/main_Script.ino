@@ -145,6 +145,8 @@ float orderedRWSpeedHistory[lengthOfHistory];
 float orderedCommandedTorqueHistory[lengthOfHistory];
 float orderedTimeStampHistory[lengthOfHistory];
 float angularAccel[lengthOfHistory-1];
+double fineDeltaTheta[lengthOfHistory];
+double coarseDeltaTheta[lengthOfHistory];
 
 // Utility function specifications. Implementations are below loop()
 void sendTorque();
@@ -209,7 +211,7 @@ void loop() {
 }
 
 void runFmAndControl() {
-  faultManagement(fmState, angularAccel, orderedCommandedTorqueHistory,
+  faultManagement(fmState, angularAccel, orderedCommandedTorqueHistory, fineDeltaTheta, coarseDeltaTheta,
 	    lengthOfHistory, MOI);
 
   // call to Compute assigns output to variable commandedTorque_mNm via pointers

@@ -11,7 +11,7 @@
 #include <fm_util.h>
 #include "faultManagement.h"
 
-void faultManagement(FmState *fmState, float *angularAccel, float *commandedTorque,
+void faultManagement(FmState *fmState, float *angularAccel, float *commandedTorque, double *fineDelTheta, double *coarseDelTheta,
 		uint16_t dataLength, float MOI) {
 	if (fmState->isFaulted) {
 		manageFaultAlreadyDetected(fmState);
@@ -21,7 +21,7 @@ void faultManagement(FmState *fmState, float *angularAccel, float *commandedTorq
 	uint8_t rwFaultDetected = faultCheckRW(fmState->faultType, angularAccel, commandedTorque, dataLength, MOI); 
 	if (rwFaultDetected) 
 		fmState->faultType = 2;
-	uint8_t fsFaultDetected = faultCheckFS();// TODO: Impl fault check fs
+	uint8_t fsFaultDetected = faultCheckFS(fmState->faultType, coarseDelTheta, fineDelTheta, dataLength);
 	if (fsFaultDetected){
 		fmState->faultType = 1;
 	}
@@ -77,7 +77,7 @@ uint8_t faultCheckRW(FmState *fmState, float *angularAccel, float *commandedTorq
 	handleFaultStatus(fmState, faultDetected);
 }
 
-uint8_t faultCheckFS(FmState *fmState, float *coarseDelTheta, float *fineDelTheta, uint16_t length) {
+uint8_t faultCheckFS(FmState *fmState, double *coarseDelTheta, double *fineDelTheta, uint16_t length) {
 	uint8_t faultDetected, faultTimerActive;
 	
 	/*Run threshold check*/
