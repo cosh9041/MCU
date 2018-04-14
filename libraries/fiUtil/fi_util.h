@@ -8,7 +8,7 @@ extern "C" {
 #include <inttypes.h>
 
 typedef struct {
-	float fsBias;
+	double fsBias;
 	uint8_t cmdToFaultRW;
 	uint8_t cmdToFaultFS;
 } FiState;
