@@ -18,10 +18,6 @@ void storeTorqueAndIncrementIndex(float *commandedTorqueHistory, uint16_t *index
 // is 55....0...99...56. I.e. the most recently stored index is 55 (just stored), and the oldest stored index is 56.
 void getOrderedHistory(float *data, float *destination, uint16_t length, uint16_t index);
 
-// Performs numerical differentiation to determine angular acceleration 
-// by taking the difference of omega / difference of t
-void getAngularAcceleration(float *omega, float *t, float *alpha, uint16_t length);
-
 #ifdef __cplusplus
 }
 #endif

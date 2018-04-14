@@ -28,18 +28,3 @@ void getOrderedHistory(float *data, float *destination, uint16_t length, uint16_
     historyIndex++;
   }
 }
-
-// Performs numerical differentiation to determine angular acceleration 
-// by taking the difference of omega / difference of t
-void getAngularAcceleration(float *omega, float *t, float *alpha, uint16_t length) {
-  float omegaDiff;
-  float tDiff;
-  for (int i = 0; i < length-1; i++) {
-    omegaDiff = omega[i+1] - omega[i];
-    tDiff = t[i+1] - t[i];
-    if (tDiff != 0)
-      alpha[i] = omegaDiff / tDiff;
-    else
-      alpha[i] = 0;
-  }
-}
