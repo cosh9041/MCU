@@ -31,7 +31,7 @@ Servo myservo;
 DuePWM pwm( PWM_FREQ1, PWM_FREQ2 );
 
 PixySPI_SS finePixy1(PRIMARY_FS_PIN);
-//PixySPI_SS finePixy2(SECONDARY_FS_PIN);
+PixySPI_SS finePixy2(SECONDARY_FS_PIN);
 PixySPI_SS coarsePixy(CS_PIN);
 
 //Define Variables we'll be connecting to
@@ -56,7 +56,7 @@ void setup()
   Serial.begin(9600);
   Serial.print("Starting...\n");
   finePixy1.init();
-  //finePixy2.init();
+  finePixy2.init();
   coarsePixy.init();
   Setpoint = 0;
   //turn the PID on
@@ -152,6 +152,9 @@ void getRWSpeed(float *rwSpeedRad, uint16_t analogReading);
 void runFmAndControl();
 void injectTimedRWFault();
 void injectTimedFSFault();
+void getPrimaryFSReading();
+void getSecondaryFSReading();
+void getCSReading();
 
 void loop() {
   getRWSpeed(&rwSpeedRad, analogRead(A0));
@@ -169,16 +172,25 @@ void loop() {
   // detected AND when there is no information. This ambiguous case cost us a lot of wasted time
   if ((millis() - timeLastReadPixy) > 20) {
     // NOTE: TO run on board which is not pixy enabled, comment out the getBlocks() calls
-    fineBlocks1 = finePixy1.getBlocks();
-    //fineBlocks2 = finePixy2.getBlocks();// NOTE: TO run on board which is not pixy enabled, comment this line out
+    fineBlocks1 = finePixy1.getBlocks(); 
+    if (fineBlocks1) {
+      getPrimaryFSReading();
+    }
+
+    fineBlocks2 = finePixy2.getBlocks();// NOTE: TO run on board which is not pixy enabled, comment this line out
+    if (fineBlocks2) {
+      getSecondaryFSReading();
+    }
+
     coarseBlocks = coarsePixy.getBlocks();
+    if (coarseBlocks) {
+      getCSReading();
+    }
     timeLastReadPixy = millis();
   }
 
-  if (fineBlocks1) {
-    deltaThetaRadFine1 = ((finePixy1.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
-    fsInjection(&deltaThetaRadFine1, fiState);
-    deltaThetaRad = deltaThetaRadFine1;
+  if (fineBlocks1 || fineBlocks2) {
+    deltaThetaRad = fmState->activeFS == 1 ? deltaThetaRadFine1 : deltaThetaRadFine2;
 
     // uncomment out these lines to inject a fs or rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
     //injectTimedRWFault();
@@ -186,9 +198,8 @@ void loop() {
 
     runFmAndControl();
   } else if(coarseBlocks) {
-    deltaThetaRadCoarse = ((coarsePixy.blocks[0].x)*convertPixToDegCoarse - centerOffsetDegCoarse)*convertDegToRad;
+    Serial.println("using coarse blocks because no fine 1 or 2");
     deltaThetaRad = deltaThetaRadCoarse;
-
     runFmAndControl();
   } else {
     // If we do not pick up blocks set PWM to 50% to shut off motors
@@ -245,6 +256,19 @@ void sendTorque() {
 void getRWSpeed(float *rwSpeedRad, uint16_t analogReading) {
   // hard coded in the '- 81' portion. This tunes down to 0 rads. most likely our system isn't perfect and is causing this. Not sure tho
   *rwSpeedRad = (28000/4096*analogReading - 14000)*2*PI/60 - 81;
+}
+
+void getPrimaryFSReading() {
+  deltaThetaRadFine1 = ((finePixy1.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
+  fsInjection(&deltaThetaRadFine1, fiState);
+}
+
+void getSecondaryFSReading() {
+  deltaThetaRadFine2 = ((finePixy2.blocks[0].x)*convertPixToDegFine - centerOffsetDegFine)*convertDegToRad;
+}
+
+void getCSReading() {
+    deltaThetaRadCoarse = ((coarsePixy.blocks[0].x)*convertPixToDegCoarse - centerOffsetDegCoarse)*convertDegToRad;
 }
 
 void injectTimedRWFault() {
