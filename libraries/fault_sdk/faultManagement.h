@@ -26,6 +26,8 @@ unsigned char checkThreshold();
 
 uint8_t faultCheckRW(FmState *fmState, float *angularAccel, float *commandedTorque, uint16_t length, float MOI);
 
+uint8_t faultCheckFS(FmState *fmState, float *coarseDelTheta, float *fineDelTheta, uint16_t length);
+
 unsigned char faultCheck();
 
 unsigned char recovery(FmState *fmState);

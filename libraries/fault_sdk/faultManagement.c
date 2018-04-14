@@ -21,7 +21,10 @@ void faultManagement(FmState *fmState, float *angularAccel, float *commandedTorq
 	uint8_t rwFaultDetected = faultCheckRW(fmState->faultType, angularAccel, commandedTorque, dataLength, MOI); 
 	if (rwFaultDetected) 
 		fmState->faultType = 2;
-	//uint8_t fsFaultDetected = faultCheckFS();// TODO: Impl fault check fs
+	uint8_t fsFaultDetected = faultCheckFS();// TODO: Impl fault check fs
+	if (fsFaultDetected){
+		fmState->faultType = 1;
+	}
 
 	/* fmState->faultType will be 0 if there is no fault, 1 if fs fault, 2 if RW*/
 	if (!fmState->faultType) {
@@ -66,6 +69,15 @@ uint8_t checkThreshold()//float *stream1, float *stream2, float )
 
 uint8_t faultCheckRW(FmState *fmState, float *angularAccel, float *commandedTorque, uint16_t length, 
 	float MOI) {
+	uint8_t faultDetected, faultTimerActive;
+	
+	/*Run threshold check*/
+	faultDetected = checkThreshold(); //TODO: Impl check threshold w/ data. Tune for run time perf
+
+	handleFaultStatus(fmState, faultDetected);
+}
+
+uint8_t faultCheckFS(FmState *fmState, float *coarseDelTheta, float *fineDelTheta, uint16_t length) {
 	uint8_t faultDetected, faultTimerActive;
 	
 	/*Run threshold check*/
