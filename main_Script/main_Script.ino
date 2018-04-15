@@ -108,6 +108,7 @@ double pwmOffset = 50;
 double pwm_duty2;
 uint32_t pwm_duty3 = 127;
 uint32_t pwm_duty_inactive = 127;
+uint32_t pwm_duty_slew = 140;
 static int i = 0;
 int k;
 char buf[32];
@@ -201,10 +202,18 @@ void loop() {
     Serial.println("using coarse blocks because no fine 1 or 2");
     deltaThetaRad = deltaThetaRadCoarse;
     runFmAndControl();
-  } else {
+  } else if (millis() > 5000) {
     // If we do not pick up blocks set PWM to 50% to shut off motors
-    pwm.pinDuty(PRIMARY_MOTOR_PIN, pwm_duty_inactive);
-    pwm.pinDuty(REDUNDANT_MOTOR_PIN, pwm_duty_inactive);
+    Serial.println("Not in view anymore");
+    Serial.println(deltaThetaRadCoarse);
+    pwm_duty_slew = deltaThetaRadCoarse < 0 ? 107 : 147;
+    if (fmState->activeRW == 1) {
+      pwm.pinDuty(PRIMARY_MOTOR_PIN, pwm_duty_slew);
+      pwm.pinDuty(REDUNDANT_MOTOR_PIN, pwm_duty_inactive);
+    } else {
+      pwm.pinDuty(PRIMARY_MOTOR_PIN, pwm_duty_inactive);
+      pwm.pinDuty(REDUNDANT_MOTOR_PIN, pwm_duty_slew);
+    }
   }
 }
 
