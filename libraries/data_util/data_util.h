@@ -7,7 +7,7 @@ extern "C" {
 
 #include <inttypes.h>
 
-void storeRWSpeed(double *rwSpeedHistory, double *timeHistory, uint16_t index, double rwSpeed, double timeStamp);
+void storeRWSpeed(double *rwSpeedHistory, unsigned long *timeHistory, uint16_t index, double rwSpeed, unsigned long timeStamp);
 
 void storeTorqueAndIncrementIndex(double *commandedTorqueHistory, uint16_t *index, 
     double commandedTorque_mNm, uint16_t length);
@@ -17,6 +17,7 @@ void storeTorqueAndIncrementIndex(double *commandedTorqueHistory, uint16_t *inde
 // this index. For example, if the currentIndex is 55, the order (in terms of recency) of the stored indicies
 // is 55....0...99...56. I.e. the most recently stored index is 55 (just stored), and the oldest stored index is 56.
 void getOrderedHistory(double *data, double *destination, uint16_t length, uint16_t index);
+void getOrderedHistoryLong(unsigned long *data, unsigned long *destination, uint16_t length, uint16_t index);
 
 #ifdef __cplusplus
 }

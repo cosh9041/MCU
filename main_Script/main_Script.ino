@@ -1,7 +1,7 @@
 #include <Servo.h> 
 Servo myservo;
 
-#include <faultManagement.h>
+//#include <faultManagement.h>
 #include <rwInjection.h>
 #include <fm_util.h>
 #include <fi_util.h>
@@ -27,6 +27,247 @@ Servo myservo;
 #define PRIMARY_FS_PIN 48
 #define SECONDARY_FS_PIN 46
 #define CS_PIN 50
+
+
+
+
+/*
+
+
+Start of fm code
+
+*/
+
+void faultManagement(FmState *fmState, double *rwSpeedHist, unsigned long *timeStampHist, uint16_t rwDataLength, 
+		double *commandedTorque, double *fineDelTheta, double *coarseDelTheta, uint16_t sensorDataLength, double MOI);
+
+void manageNewFaultDetected(FmState *fmState);
+
+uint8_t faultCheckRW(FmState *fmState, double *frictionTorque, double *commandedTorque, double *rwSpeed, uint16_t length);
+
+uint8_t checkThreshold(double *data_x, double *data_y, uint16_t length, double threshold);
+
+void manageFaultAlreadyDetected(FmState *fmState);
+
+uint8_t faultCheckFS(FmState *fmState, double *coarseDelTheta, double *fineDelTheta, uint16_t length);
+
+uint8_t handleFaultStatus(FmState *fmState, uint8_t faultDetected);
+
+// Performs numerical differentiation to determine angular acceleration 
+// by taking the difference of omega / difference of t. then multiplies by Moment of intertia (MOI)
+// to get the response torque on the reaction wheel
+void getResponseTorque(double *omega, double *t, double *responseTorque, double *commandedTorque, 
+	double *frictionTorque, uint16_t length, double MOI);
+
+
+
+
+
+
+#include <stdio.h>
+#include <inttypes.h>
+#include <stdlib.h>
+#include "Arduino.h"
+#include <math.h>
+#include <fm_util.h>
+//#include "faultManagement.h"
+
+void faultManagement(FmState *fmState, double *rwSpeedHist, unsigned long *timeStampHist, uint16_t rwDataLength, 
+		double *commandedTorque, double *fineDelTheta, double *coarseDelTheta, uint16_t sensorDataLength, double MOI) {
+	if (fmState->isFaulted) {
+		manageFaultAlreadyDetected(fmState);
+		return;
+	}
+
+	double responseTorque[rwDataLength];
+	double frictionTorque[rwDataLength];
+	getResponseTorque(rwSpeedHist, timeStampHist, responseTorque, commandedTorque, frictionTorque,
+		rwDataLength, MOI);
+
+	uint8_t rwFaultDetected = faultCheckRW(fmState, frictionTorque, commandedTorque, rwSpeedHist, rwDataLength); 
+	if (rwFaultDetected) {
+		if (fmState->isRecovering) return;
+		fmState->faultType = 2;
+	}
+	uint8_t fsFaultDetected = 0;
+	// uint8_t fsFaultDetected = faultCheckFS(fmState->faultType, coarseDelTheta, fineDelTheta, rwDataLength);
+	// if (fsFaultDetected){
+		// if (fmState->isRecovering) return;
+	// 	fmState->faultType = 1;
+	// }
+
+	/* fmState->faultType will be 0 if there is no fault, 1 if fs fault, 2 if RW*/
+	if (!rwFaultDetected && !fsFaultDetected) {
+		fmState->faultType = 0;
+		fmState->isRecovering = 0; 
+		return; 
+	}
+
+	manageNewFaultDetected(fmState);
+}
+
+// Performs numerical differentiation to determine angular acceleration 
+// by taking the difference of omega / difference of t, then multiply by
+// moment of intertia to calculate response torque of system
+void getResponseTorque(double *omega, unsigned long *t, double *responseTorque, double *commandedTorque, 
+	  double *frictionTorque, uint16_t length, double MOI) {
+  double omegaDiff;
+  int tDiff;
+  double tDiffs;
+  double angularAccel;
+  Serial.println("Starting loop........................................................");
+  for (int i = 0; i < length-1; i++) {
+    omegaDiff = omega[i] - omega[i+1];
+    tDiff = int(t[i] - t[i+1]);
+    tDiffs = tDiff * .000001;
+    //Serial.println("Omega");
+    Serial.println(omega[i]);
+    // Serial.println("tDiffs");
+    // Serial.println(tDiffs, 10);
+
+    if (tDiff != 0) {
+      angularAccel = omegaDiff/tDiffs;
+      responseTorque[i] = angularAccel * MOI;
+    } else {
+      Serial.println("Should really never be here");
+      responseTorque[i] = 0;
+    }
+	  frictionTorque[i] = commandedTorque[i] - responseTorque[i];
+    // Serial.println("omegaDiff");
+    // Serial.println(omegaDiff, 15);
+    // Serial.println("tDiff");
+    // Serial.println(tDiff);
+    // Serial.println("Angular Accel");
+    // Serial.println(angularAccel);
+    // Serial.println("Calculated friction torque");
+    // Serial.println(frictionTorque[i], 15);
+    // Serial.println("Response torque");
+    // Serial.println(responseTorque[i], 15);
+    // Serial.println("commanded torque");
+    // Serial.println(commandedTorque[i], 15);
+  }
+
+  delay(10000);
+  Serial.println("Starting time loop");
+  for (int i = 0; i < length-1; i++) {
+    tDiff = int(t[i] - t[i+1]);
+    tDiffs = tDiff * .000001;
+    Serial.println(tDiffs, 10);
+  }
+  delay(10000);
+}
+
+void manageNewFaultDetected(FmState *fmState) {
+	fmState->isFaulted = 1;
+	fmState->faulting = 0;
+	/*TODO: Function to Alert GSU Function here*/
+	//alertGSU(fmState->faultType);
+	switch(fmState->faultType) {
+		case 2:  // RW fault. turn off command to RW 1 to allow for visible deterioration of control
+			Serial.println("RW fault detected");
+			Serial.println(fmState->faultType);
+			fmState->activeRW = 0;
+      delay(10000);
+			break;
+		case 1: break; // FS fault. In this case, we do nothing
+		default: break;
+	}
+}
+
+void manageFaultAlreadyDetected(FmState *fmState) {
+	// fmState->cmdToRecover will be 1 when the system is commanded to initiate recovery
+	// from the GSU. The setting of this bit is handled by the communication
+	// handlers
+	if (!fmState->cmdToRecover)
+		return;
+
+	fmState->cmdToRecover = 0;
+	//recovery(fmState->faultType); TODO: re-impl Initiate recovery func
+	fmState->isFaulted = 0;
+	fmState->isRecovering = 1;
+}
+
+uint8_t checkThreshold(double *data_x, double *data_y, uint16_t length, double threshold) {
+	double sum = 0;
+	for (int i = 0; i < length; i++) {
+		sum += fabsf(data_y[i] - data_x[i]);
+	}
+	double meanDiff = sum/length;
+	if (meanDiff > threshold) return 1;
+	return 0; 
+}
+
+uint8_t faultCheckRW(FmState *fmState, double *frictionTorque, double *commandedTorque, double *rwSpeed, uint16_t length) {
+	double expectedFriction[length];
+	for (int i = 0; i < length; i++) {
+		expectedFriction[i] = fmState->p1*rwSpeed[i] + fmState->p2;
+	}
+
+	uint8_t faultDetected = checkThreshold(frictionTorque, expectedFriction, length-1, 3*(fmState->p2)); 
+	return handleFaultStatus(fmState, faultDetected);
+}
+
+uint8_t faultCheckFS(FmState *fmState, double *coarseDelTheta, double *fineDelTheta, uint16_t length) {
+	uint8_t faultDetected, faultTimerActive;
+	
+	/*Run threshold check*/
+	//faultDetected = checkThreshold(); //TODO: Impl check threshold w/ data. Tune for run time perf
+
+	handleFaultStatus(fmState, faultDetected);
+}
+
+uint8_t handleFaultStatus(FmState *fmState, uint8_t faultDetected) {
+	if (!faultDetected) {
+		fmState->faultTimerActive = 0;
+		return 0;
+	}
+
+	if (!fmState->faultTimerActive && !fmState->isRecovering) {
+		fmState->faultTimerStart = millis();
+		fmState->faultTimerActive = 1;
+		return 0;
+	}
+	
+	if ((millis() - fmState->faultTimerStart) > fmState->timeToFault) {
+		if (fmState->faultTimerActive) {
+			fmState->faultTimerActive = 0;
+			return 1;
+		} else if (fmState->isRecovering) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+
+///// UNFUCK THIS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 DuePWM pwm( PWM_FREQ1, PWM_FREQ2 );
 
@@ -81,9 +322,9 @@ double rwSpeedRad;
 // Physical characteristics
 double const p1 = 0.0000335653965; // mNm/(rad/s), viscous friction 
 double const p2 = 0.1303; // mNm, coloumb friction
-double MOI = 1; //MOI of RW, stubbed out for now
+double MOI = .047; //MOI of RW, kg*m^2
 double delta_omega = 15; // small delta near zero where we set torque to zero to simulate friction. TODO: Tune this value
-uint16_t const rwDataLength = 150;
+uint16_t const rwDataLength = 1000;
 uint16_t const sensorDataLength = 50;
 // rwStackPtr points to the most recent data point. The last 100 data points are accumulated "behind"
 // this index. For example, if the rwStackPtr is 55, the order (in terms of recency) of the stored indicies
@@ -94,10 +335,10 @@ uint16_t sensorStackPtr = 0;
 //TODO: Determine units and ideal length for these. 
 double commandedTorqueHistory[rwDataLength];
 double rwSpeedHist[rwDataLength];
-double timeStampHistory[rwDataLength];
+unsigned long timeStampHistory[rwDataLength];
 double orderedRWSpeedHistory[rwDataLength];
 double orderedCommandedTorqueHistory[rwDataLength];
-double orderedTimeStampHistory[rwDataLength];
+unsigned long orderedTimeStampHistory[rwDataLength];
 double angularAccel[rwDataLength-1];
 double fineDeltaTheta[sensorDataLength];
 double coarseDeltaTheta[sensorDataLength];
@@ -169,14 +410,31 @@ void setup() {
 void loop() {
   getRWSpeed(&rwSpeedRad, analogRead(A0));
 
-  storeRWSpeed(rwSpeedHist, timeStampHistory, rwStackPtr, rwSpeedRad, millis());
+  unsigned long timeStamp = micros();
+  // Serial.println("Storing RW speed with time: ");
+  // Serial.println(timeStamp);
+  // Serial.println(rwStackPtr);
+  storeRWSpeed(rwSpeedHist, timeStampHistory, rwStackPtr, rwSpeedRad, timeStamp);
 
   // Stores ordered lists of last n = `rwDataLength` data points, with most recent being at index 0
   getOrderedHistory(rwSpeedHist, orderedRWSpeedHistory, rwDataLength, rwStackPtr);
   getOrderedHistory(commandedTorqueHistory, orderedCommandedTorqueHistory, rwDataLength, rwStackPtr);
-  getOrderedHistory(timeStampHistory, orderedTimeStampHistory, rwDataLength, rwStackPtr);
+  getOrderedHistoryLong(timeStampHistory, orderedTimeStampHistory, rwDataLength, rwStackPtr);
 
-  runFM();
+  // Ensure the system is operational before starting fm
+  if (millis() > 25000) runFM();
+
+  if (fmState->faulting == 1 && fiState->cmdToFaultRW) {
+    Serial.println("We're in a faulting state, detected, nice");
+  }
+
+  if (fmState->faulting == 1 && !(fiState->cmdToFaultRW)) {
+    Serial.println("Detected fault when none present, fuck");
+  }
+
+  if (fmState->faulting == 0 && fiState->cmdToFaultRW) {
+    Serial.println("Did not detect fault when fault was present, fuck");
+  }
 
   // NOTE: Pixy.getBlocks does a dirty nasty thing and returns 0 both when there are no blocks
   // detected AND when there is no information. This ambiguous case cost us a lot of wasted time
@@ -198,9 +456,12 @@ void loop() {
     runControl();
   } else {
     // If we do not pick up blocks set PWM to 50% to shut off motors
+    // TODO: Figure out what the commanded torque is for the no-detect case here
+    commandedTorque_mNm = 0;
     pwm.pinDuty(PRIMARY_MOTOR_PIN, pwm_duty_inactive);
     pwm.pinDuty(REDUNDANT_MOTOR_PIN, pwm_duty_inactive);
   }
+  storeTorqueAndIncrementIndex(commandedTorqueHistory, &rwStackPtr, commandedTorque_mNm, rwDataLength);
 }
 
 void runFM() {
@@ -248,7 +509,6 @@ void sendTorque() {
     pwm.pinDuty(REDUNDANT_MOTOR_PIN, pwm_duty_inactive); // computed duty cycle on Pin 7 (Secondary RW)
   }
 
-  storeTorqueAndIncrementIndex(commandedTorqueHistory, &rwStackPtr, commandedTorque_mNm, rwDataLength);
 }
 
 void getBlockReading() {
@@ -272,6 +532,7 @@ void getBlockReading() {
 void getRWSpeed(double *rwSpeedRad, uint16_t analogReading) {
   // hard coded in the '- 81' portion. This tunes down to 0 rads. most likely our system isn't perfect and is causing this. Not sure tho
   *rwSpeedRad = (28000/4096*analogReading - 14000)*2*PI/60 - 81;
+  Serial.println("analogReading");
 }
 
 void getPrimaryFSReading() {
@@ -309,3 +570,4 @@ void injectTimedFSFault() {
     fiState->cmdToFaultFS = 0;
   }
 }
+

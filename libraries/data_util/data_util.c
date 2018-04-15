@@ -1,7 +1,7 @@
 #include "data_util.h"
 #include <inttypes.h>
 
-void storeRWSpeed(double *rwSpeedHistory, double *timeHistory, uint16_t index, double rwSpeed, double timeStamp) {
+void storeRWSpeed(double *rwSpeedHistory, unsigned long *timeHistory, uint16_t index, double rwSpeed, unsigned long timeStamp) {
   rwSpeedHistory[index] = rwSpeed;
   timeHistory[index] = timeStamp;
 }
@@ -28,3 +28,18 @@ void getOrderedHistory(double *data, double *destination, uint16_t length, uint1
     historyIndex++;
   }
 }
+
+// Same as getOrderedHistory, but wiht longs
+void getOrderedHistoryLong(unsigned long *data, unsigned long *destination, uint16_t length, uint16_t index) {
+  uint16_t historyIndex = 0;
+  int32_t i; 
+  for (i = index; i >= 0; i--) {
+    destination[historyIndex] = data[i];
+    historyIndex++;
+  }
+  for (i = (length - 1); i > index; i--) {
+    destination[historyIndex] = data[i];
+    historyIndex++;
+  }
+}
+
