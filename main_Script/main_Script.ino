@@ -35,6 +35,7 @@ PixySPI_SS finePixy2(SECONDARY_FS_PIN);
 PixySPI_SS coarsePixy(CS_PIN);
 
 unsigned long timeLastReadPixy = 0;
+unsigned long current_time;
 
 //Define Variables we'll be connecting to
 double deltaThetaRadFine1, deltaThetaRadFine2;
@@ -174,7 +175,19 @@ void setup() {
 } 
 
 void loop() {
-  getRWSpeed(&rwSpeedRad, analogRead(A0));
+  // Send current time to Labview
+  current_time = millis();
+  Serial.write(current_time>>24);
+  Serial.write(current_time>>16);
+  Serial.write(current_time>>8);
+  Serial.write(current_time);
+
+  rwSpeedBin = analogRead(A0);
+  getRWSpeed(&rwSpeedRad, rwSpeedBin);
+
+  // Send rw speed to Labview
+  Serial.write(rwSpeedBin>>8);
+  Serial.write(rwSpeedBin);  
 
   unsigned long timeStamp = micros();
   storeRWSpeed(rwSpeedHist, timeStampHistory, rwStackPtr, rwSpeedRad, timeStamp);
