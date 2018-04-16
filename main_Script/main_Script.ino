@@ -123,7 +123,7 @@ void getBlockReading();
 void runFM();
 
 void setup() { 
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.print("Starting...\n");
   finePixy1.init();
   finePixy2.init();
@@ -189,6 +189,7 @@ void loop() {
   // Send rw speed to Labview
   Serial.write(rwSpeedBin>>8);
   Serial.write(rwSpeedBin);  
+  delay(100);
 
   unsigned long timeStamp = micros();
   storeRWSpeed(rwSpeedHist, timeStampHistory, rwStackPtr, rwSpeedRad, timeStamp);
