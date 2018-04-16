@@ -211,22 +211,18 @@ void loop() {
     }
     
     runControl();
+    sendTorque();
   } else if(coarseBlocks) {
     deltaThetaRad = deltaThetaRadCoarse;
     runControl();
+    sendTorque();
   } else if (millis() > 5000) {
     // If we do not pick up blocks set PWM to 50% to shut off motors
-    commandedTorqueSlew = deltaThetaRadCoarse < 0 ? -2 : 2;
-    commandedTorqueSlew = injectRWFault(fiState, commandedTorqueSlew, rwSpeedRad, p1, p2, delta_omega, 
-    fmState->activeRW == 1);
-    pwm_duty_slew = (commandedTorque_mNm*mNm_to_mA*mA_to_duty + pwmOffset)*duty_to_bin;
-    if (fmState->activeRW == 1) {
-      pwm.pinDuty(PRIMARY_MOTOR_PIN, pwm_duty_slew);
-      pwm.pinDuty(REDUNDANT_MOTOR_PIN, pwm_duty_inactive);
-    } else {
-      pwm.pinDuty(PRIMARY_MOTOR_PIN, pwm_duty_inactive);
-      pwm.pinDuty(REDUNDANT_MOTOR_PIN, pwm_duty_slew);
-    }
+    commandedTorque_mNm = deltaThetaRadCoarse < 0 ? -2 : 2;
+    commandedTorque_mNm = injectRWFault(fiState, commandedTorque_mNm, rwSpeedRad, p1, p2, delta_omega, 
+        fmState->activeRW == 1);
+
+    sendTorque();
   }
   storeTorqueAndIncrementIndex(commandedTorqueHistory, &rwStackPtr, commandedTorque_mNm, rwDataLength);
 }
@@ -245,7 +241,6 @@ void runControl() {
   commandedTorque_mNm = injectRWFault(fiState, commandedTorque_mNm, rwSpeedRad, p1, p2, delta_omega, 
     fmState->activeRW == 1);
 
-  sendTorque();
 }
 
 void sendTorque() {
@@ -315,7 +310,7 @@ void injectTimedRWFault() {
     Serial.println("faulting rw");
     fiState->cmdToFaultRW = 1;
   }
-  if (millis() > 60000 && fiState->cmdToFaultRW) {
+  if (millis() > 80000 && fiState->cmdToFaultRW) {
     Serial.println("Unfaulting rw");
     fiState->cmdToFaultRW = 0;
     fmState->activeRW = 2;
@@ -327,9 +322,5 @@ void injectTimedFSFault() {
     Serial.println("faulting fs");
     fiState->cmdToFaultFS = 1;
   }
-  // if (millis() > 100000 && fiState->cmdToFaultFS) {
-  //   Serial.println("Unfaulting fs");
-  //   fiState->cmdToFaultFS = 0;
-  // }
 }
 
