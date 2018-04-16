@@ -216,7 +216,7 @@ void loop() {
     runControl();
   } else if (millis() > 5000) {
     // If we do not pick up blocks set PWM to 50% to shut off motors
-    commandedTorqueSlew = deltaThetaRadCoarse < 0 ? -10.85 : 10.85;
+    commandedTorqueSlew = deltaThetaRadCoarse < 0 ? -2 : 2;
     commandedTorqueSlew = injectRWFault(fiState, commandedTorqueSlew, rwSpeedRad, p1, p2, delta_omega, 
     fmState->activeRW == 1);
     pwm_duty_slew = (commandedTorque_mNm*mNm_to_mA*mA_to_duty + pwmOffset)*duty_to_bin;
