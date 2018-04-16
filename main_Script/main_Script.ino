@@ -42,7 +42,9 @@ double deltaThetaRadCoarse;
 double Setpoint, deltaThetaRad, commandedTorque_mNm;
 
 //Specify the links and initial tuning parameters
-double const Kp=6.31600775000411, Ki=0.200331632823233, Kd=36.7969404030176, N=0.5;
+//double const Kp=6.31600775000411, Ki=0.200331632823233, Kd=36.7969404030176, N=0.5;
+// THESE ARE PRETTY GOOT
+double const Kp=9.31600775000411, Ki=0.800331632823233, Kd=46.7969404030176, N=0.5;
 PID myPID(&deltaThetaRad, &commandedTorque_mNm, &Setpoint, Kp, Ki, Kd, N, DIRECT);
 
 //Allocate for fm/fi state variables
@@ -60,6 +62,7 @@ double pwmOffset = 50;
 double pwm_duty2;
 uint32_t pwm_duty3 = 127;
 uint32_t pwm_duty_inactive = 127;
+uint32_t pwm_duty_slew;
 static int i = 0;
 int k;
 char buf[32];
@@ -184,18 +187,6 @@ void loop() {
   // Ensure the system is operational before starting fm
   if (millis() > 10000) runFM();
 
-  if (fmState->faulting == 1 && fiState->cmdToFaultFS) {
-    Serial.println("We're in a faulting state, detected, nice");
-  }
-
-  if (fmState->faulting == 1 && !(fiState->cmdToFaultFS)) {
-    Serial.println("Detected fault when none present, fuck");
-  }
-
-  // if (fmState->faulting == 0 && fiState->cmdToFaultFS) {
-  //   Serial.println("Did not detect fault when fault was present, fuck");
-  // }
-
   // NOTE: Pixy.getBlocks does a dirty nasty thing and returns 0 both when there are no blocks
   // detected AND when there is no information. This ambiguous case cost us a lot of wasted time
   if ((millis() - timeLastReadPixy) > 20) {
@@ -223,12 +214,16 @@ void loop() {
   } else if(coarseBlocks) {
     deltaThetaRad = deltaThetaRadCoarse;
     runControl();
-  } else {
+  } else if (millis() > 5000) {
     // If we do not pick up blocks set PWM to 50% to shut off motors
-    // TODO: Figure out what the commanded torque is for the no-detect case here
-    commandedTorque_mNm = 0;
-    pwm.pinDuty(PRIMARY_MOTOR_PIN, pwm_duty_inactive);
-    pwm.pinDuty(REDUNDANT_MOTOR_PIN, pwm_duty_inactive);
+    pwm_duty_slew = deltaThetaRadCoarse < 0 ? 107 : 147;
+    if (fmState->activeRW == 1) {
+      pwm.pinDuty(PRIMARY_MOTOR_PIN, pwm_duty_slew);
+      pwm.pinDuty(REDUNDANT_MOTOR_PIN, pwm_duty_inactive);
+    } else {
+      pwm.pinDuty(PRIMARY_MOTOR_PIN, pwm_duty_inactive);
+      pwm.pinDuty(REDUNDANT_MOTOR_PIN, pwm_duty_slew);
+    }
   }
   storeTorqueAndIncrementIndex(commandedTorqueHistory, &rwStackPtr, commandedTorque_mNm, rwDataLength);
 }
