@@ -199,7 +199,7 @@ void loop() {
 
     // uncomment out these lines to inject a fs or rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
     // injectTimedRWFault();
-    //injectTimedFSFault();
+    injectTimedFSFault();
     storeSensorData(fineDeltaTheta, coarseDeltaTheta, sensorStackPtr, deltaThetaRad, deltaThetaRadCoarse);
     getOrderedHistory(fineDeltaTheta, orderedFineDeltaTheta, sensorDataLength, sensorStackPtr);
     getOrderedHistory(coarseDeltaTheta, orderedCoarseDeltaTheta, sensorDataLength, sensorStackPtr);
@@ -308,11 +308,11 @@ void getCSReading() {
 
 void injectTimedRWFault() {
   // uncomment out these lines to inject a rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
-  if (millis() > 40000 && !fiState->cmdToFaultRW && millis() < 60000) {
+  if (millis() > 60000 && !fiState->cmdToFaultRW && millis() < 80000) {
     Serial.println("faulting rw");
     fiState->cmdToFaultRW = 1;
   }
-  if (millis() > 60000 && fiState->cmdToFaultRW) {
+  if (millis() > 80000 && fiState->cmdToFaultRW) {
     Serial.println("Unfaulting rw");
     fiState->cmdToFaultRW = 0;
     fmState->activeRW = 2;
@@ -320,7 +320,7 @@ void injectTimedRWFault() {
 }
 
 void injectTimedFSFault() {
-  if (millis() > 20000 && !fiState->cmdToFaultFS && millis() < 80000) {
+  if (millis() > 50000 && !fiState->cmdToFaultFS) {//&& millis() < 80000) {
     Serial.println("faulting fs");
     fiState->cmdToFaultFS = 1;
   }
