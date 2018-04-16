@@ -182,6 +182,7 @@ void loop() {
   Serial.write(current_time>>8);
   Serial.write(current_time);
 
+  // Pull rw speed from motor controller
   rwSpeedBin = analogRead(A0);
   getRWSpeed(&rwSpeedRad, rwSpeedBin);
 
