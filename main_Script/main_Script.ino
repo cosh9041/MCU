@@ -207,20 +207,15 @@ void loop() {
     deltaThetaRad = fmState->activeFS == 1 ? deltaThetaRadFine1 : deltaThetaRadFine2;
 
     // uncomment out these lines to inject a fs or rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
-    //injectTimedRWFault();
-    injectTimedFSFault();
+    // injectTimedRWFault();
+    //injectTimedFSFault();
     storeSensorData(fineDeltaTheta, coarseDeltaTheta, sensorStackPtr, deltaThetaRad, deltaThetaRadCoarse);
     getOrderedHistory(fineDeltaTheta, orderedFineDeltaTheta, sensorDataLength, sensorStackPtr);
     getOrderedHistory(coarseDeltaTheta, orderedCoarseDeltaTheta, sensorDataLength, sensorStackPtr);
     sensorStackPtr++;
     if (sensorStackPtr == sensorDataLength) sensorStackPtr = 0;
 
-    //Serial.println(deltaThetaRadFine1 - deltaThetaRadCoarse * 180/PI);
-    // if ((fabs(deltaThetaRadFine1 - deltaThetaRadCoarse) * 180/PI) > 5) {
-    //   Serial.println("FAULTINGLINGGLKNGLKJGLKJLGKJ");
-    // }
     if (fmState->isFaulted && fmState->faultType == 1) {
-      Serial.println("fault detected, setting activeFS to 2 (secondary)");
       fmState->activeFS = 2;
     }
     
@@ -266,12 +261,6 @@ void sendTorque() {
   pwm_duty2 = round(pwm_duty);
   pwm_duty3 = (uint32_t) pwm_duty2;
 
-  // Uncomment these lines to do a timed  switch to secondary rw
-  // if (millis() > 20000 && fmState->activeRW == 1) {
-  //   fmState->activeRW = 2;
-  // }
-
-  // Testing switching b/w rw
   if (fmState->activeRW == 1) {
     pwm.pinDuty(PRIMARY_MOTOR_PIN, pwm_duty3);  // computed duty cycle on Pin 6 (Primary RW)
     pwm.pinDuty(REDUNDANT_MOTOR_PIN, pwm_duty_inactive);  // inactive duty cycle (127 PWM) on Pin 7 (Secondary RW)
@@ -324,11 +313,11 @@ void getCSReading() {
 
 void injectTimedRWFault() {
   // uncomment out these lines to inject a rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
-  if (millis() > 40000 && !fiState->cmdToFaultRW && millis() < 80000) {
+  if (millis() > 40000 && !fiState->cmdToFaultRW && millis() < 60000) {
     Serial.println("faulting rw");
     fiState->cmdToFaultRW = 1;
   }
-  if (millis() > 80000 && fiState->cmdToFaultRW) {
+  if (millis() > 60000 && fiState->cmdToFaultRW) {
     Serial.println("Unfaulting rw");
     fiState->cmdToFaultRW = 0;
     fmState->activeRW = 2;
