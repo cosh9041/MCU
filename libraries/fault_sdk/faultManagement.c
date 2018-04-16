@@ -1,11 +1,4 @@
-﻿/*
- * faultManagement.c
- *
- * Created: 1/29/2018 2:41:34 PM
- * Author : Pol Sieira
- */ 
-
-#include <stdio.h>
+﻿#include <stdio.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include "Arduino.h"
@@ -13,7 +6,7 @@
 #include <fm_util.h>
 #include "faultManagement.h"
 
-void faultManagement(FmState *fmState, double *rwSpeedHist, double *timeStampHist, uint16_t rwDataLength, 
+void faultManagement(FmState *fmState, double *rwSpeedHist, unsigned long *timeStampHist, uint16_t rwDataLength, 
 		double *commandedTorque, double *fineDelTheta, double *coarseDelTheta, uint16_t sensorDataLength, double MOI) {
 	if (fmState->isFaulted) {
 		manageFaultAlreadyDetected(fmState);
@@ -25,17 +18,17 @@ void faultManagement(FmState *fmState, double *rwSpeedHist, double *timeStampHis
 	getResponseTorque(rwSpeedHist, timeStampHist, responseTorque, commandedTorque, frictionTorque,
 		rwDataLength, MOI);
 
-	uint8_t rwFaultDetected = faultCheckRW(fmState->faultType, frictionTorque, commandedTorque, rwSpeedHist, rwDataLength); 
-	if (rwFaultDetected) {
-		if (fmState->isRecovering) return;
-		fmState->faultType = 2;
-	}
-	uint8_t fsFaultDetected = 0;
-	// uint8_t fsFaultDetected = faultCheckFS(fmState->faultType, coarseDelTheta, fineDelTheta, rwDataLength);
-	// if (fsFaultDetected){
-		// if (fmState->isRecovering) return;
-	// 	fmState->faultType = 1;
+  uint8_t rwFaultDetected = 0;
+	// uint8_t rwFaultDetected = faultCheckRW(fmState, frictionTorque, commandedTorque, rwSpeedHist, rwDataLength); 
+	// if (rwFaultDetected) 
+	// 	if (fmState->isRecovering) return;
+	// 	fmState->faultType = 2;
 	// }
+	uint8_t fsFaultDetected = faultCheckFS(fmState, coarseDelTheta, fineDelTheta, sensorDataLength);
+	if (fsFaultDetected) {
+		if (fmState->isRecovering) return;
+		fmState->faultType = 1;
+	}
 
 	/* fmState->faultType will be 0 if there is no fault, 1 if fs fault, 2 if RW*/
 	if (!rwFaultDetected && !fsFaultDetected) {
@@ -50,19 +43,26 @@ void faultManagement(FmState *fmState, double *rwSpeedHist, double *timeStampHis
 // Performs numerical differentiation to determine angular acceleration 
 // by taking the difference of omega / difference of t, then multiply by
 // moment of intertia to calculate response torque of system
-void getResponseTorque(double *omega, double *t, double *responseTorque, double *commandedTorque, 
-	double *frictionTorque, uint16_t length, double MOI) {
-  double omegaDiff;
-  double tDiff;
-  for (int i = 0; i < length-1; i++) {
-    omegaDiff = omega[i+1] - omega[i];
-    tDiff = t[i+1] - t[i];
-    if (tDiff != 0)
-      responseTorque[i] = omegaDiff / tDiff * MOI;
-    else
-      responseTorque[i] = 0;
-	frictionTorque[i] = commandedTorque[i] - responseTorque[i];
-  }
+void getResponseTorque(double *omega, unsigned long *t, double *responseTorque, double *commandedTorque, 
+	  double *frictionTorque, uint16_t length, double MOI) {
+//   double omegaDiff;
+//   int tDiff;
+//   double tDiffs;
+//   double angularAccel;
+//   for (int i = 0; i < length-1; i++) {
+//     omegaDiff = omega[i] - omega[i+1];
+// 	// NOTE: THIS LINE DOES NOT WORKK IN C I THINK
+//     //tDiff = int(t[i] - t[i+1]);
+//     tDiffs = tDiff * .000001;
+
+//     if (tDiff != 0) {
+//       angularAccel = omegaDiff/tDiffs;
+//       responseTorque[i] = angularAccel * MOI;
+//     } else {
+//       responseTorque[i] = 0;
+//     }
+// 	  frictionTorque[i] = commandedTorque[i] - responseTorque[i];
+//   }
 }
 
 void manageNewFaultDetected(FmState *fmState) {
@@ -74,7 +74,8 @@ void manageNewFaultDetected(FmState *fmState) {
 		case 2:  // RW fault. turn off command to RW 1 to allow for visible deterioration of control
 			fmState->activeRW = 0;
 			break;
-		case 1: break; // FS fault. In this case, we do nothing
+		case 1: 
+      break; // FS fault. In this case, we do nothing
 		default: break;
 	}
 }
@@ -83,8 +84,9 @@ void manageFaultAlreadyDetected(FmState *fmState) {
 	// fmState->cmdToRecover will be 1 when the system is commanded to initiate recovery
 	// from the GSU. The setting of this bit is handled by the communication
 	// handlers
-	if (!fmState->cmdToRecover)
-		return;
+
+	// if (!fmState->cmdToRecover)
+	// 	return;
 
 	fmState->cmdToRecover = 0;
 	//recovery(fmState->faultType); TODO: re-impl Initiate recovery func
@@ -94,10 +96,16 @@ void manageFaultAlreadyDetected(FmState *fmState) {
 
 uint8_t checkThreshold(double *data_x, double *data_y, uint16_t length, double threshold) {
 	double sum = 0;
+  double diff = 0;
 	for (int i = 0; i < length; i++) {
-		sum += fabsf(data_y[i] - data_x[i]);
+    diff = (data_y[i] - data_x[i]);
+    // Serial.println(diff);
+    diff = fabs(diff);
+    // Serial.println(diff);
+		sum += diff;
 	}
 	double meanDiff = sum/length;
+  //Serial.println(meanDiff);
 	if (meanDiff > threshold) return 1;
 	return 0; 
 }
@@ -113,12 +121,8 @@ uint8_t faultCheckRW(FmState *fmState, double *frictionTorque, double *commanded
 }
 
 uint8_t faultCheckFS(FmState *fmState, double *coarseDelTheta, double *fineDelTheta, uint16_t length) {
-	uint8_t faultDetected, faultTimerActive;
-	
-	/*Run threshold check*/
-	//faultDetected = checkThreshold(); //TODO: Impl check threshold w/ data. Tune for run time perf
-
-	handleFaultStatus(fmState, faultDetected);
+	uint8_t faultDetected = checkThreshold(coarseDelTheta, fineDelTheta, length, 4*PI/180); //TODO: Impl check threshold w/ data. Tune for run time perf
+	return handleFaultStatus(fmState, faultDetected);
 }
 
 uint8_t handleFaultStatus(FmState *fmState, uint8_t faultDetected) {
@@ -143,3 +147,5 @@ uint8_t handleFaultStatus(FmState *fmState, uint8_t faultDetected) {
 	}
 	return 0;
 }
+
+

@@ -16,7 +16,7 @@ extern "C" {
 #include <fm_util.h>
 #include "Arduino.h"
 
-void faultManagement(FmState *fmState, double *rwSpeedHist, double *timeStampHisty, uint16_t rwDataLength, 
+void faultManagement(FmState *fmState, double *rwSpeedHist, unsigned long *timeStampHist, uint16_t rwDataLength, 
 		double *commandedTorque, double *fineDelTheta, double *coarseDelTheta, uint16_t sensorDataLength, double MOI);
 
 void manageNewFaultDetected(FmState *fmState);
@@ -34,7 +34,7 @@ uint8_t handleFaultStatus(FmState *fmState, uint8_t faultDetected);
 // Performs numerical differentiation to determine angular acceleration 
 // by taking the difference of omega / difference of t. then multiplies by Moment of intertia (MOI)
 // to get the response torque on the reaction wheel
-void getResponseTorque(double *omega, double *t, double *responseTorque, double *commandedTorque, 
+void getResponseTorque(double *omega, unsigned long *t, double *responseTorque, double *commandedTorque, 
 	double *frictionTorque, uint16_t length, double MOI);
 
 #ifdef __cplusplus

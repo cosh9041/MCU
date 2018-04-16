@@ -6,6 +6,11 @@ void storeRWSpeed(double *rwSpeedHistory, unsigned long *timeHistory, uint16_t i
   timeHistory[index] = timeStamp;
 }
 
+void storeSensorData(double *fineDeltaTheta, double *coarseDeltaTheta, uint16_t index, double fineDeltaThetaVal, double coarseDeltaThetaVal) {
+  fineDeltaTheta[index] = fineDeltaThetaVal;
+  coarseDeltaTheta[index] = coarseDeltaThetaVal;
+}
+
 void storeTorqueAndIncrementIndex(double *commandedTorqueHistory, uint16_t *index, double commandedTorque_mNm, uint16_t length) {
   *index += 1;
   if (*index == length) *index = 0;
