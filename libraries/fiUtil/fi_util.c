@@ -5,7 +5,7 @@
 #include "fi_util.h"
 
 void initializeFaultInjectState(FiState *fiState) {
-  fiState->fsBias = 6.0*2.0*M_PI/360;
+  fiState->fsBias = 8.0*2.0*M_PI/360;
   fiState->cmdToFaultRW = 0;
   fiState->cmdToFaultFS = 0;
 }

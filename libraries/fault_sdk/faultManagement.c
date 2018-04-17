@@ -18,7 +18,7 @@ void faultManagement(FmState *fmState, double *rwSpeedHist, unsigned long *timeS
 	getResponseTorque(rwSpeedHist, timeStampHist, responseTorque, commandedTorque, frictionTorque,
 		rwDataLength, MOI);
 
-  uint8_t rwFaultDetected = 0;
+  	uint8_t rwFaultDetected = 0;
 	// uint8_t rwFaultDetected = faultCheckRW(fmState, frictionTorque, commandedTorque, rwSpeedHist, rwDataLength); 
 	// if (rwFaultDetected) 
 	// 	if (fmState->isRecovering) return;
@@ -69,7 +69,7 @@ void manageNewFaultDetected(FmState *fmState) {
 	fmState->isFaulted = 1;
 	fmState->faulting = 0;
 	/*TODO: Function to Alert GSU Function here*/
-	//alertGSU(fmState->faultType);
+	alertGSU(fmState);
 	switch(fmState->faultType) {
 		case 2:  // RW fault. turn off command to RW 1 to allow for visible deterioration of control
 			fmState->activeRW = 0;
@@ -85,11 +85,16 @@ void manageFaultAlreadyDetected(FmState *fmState) {
 	// from the GSU. The setting of this bit is handled by the communication
 	// handlers
 
-	// if (!fmState->cmdToRecover)
-	// 	return;
+	if (!fmState->cmdToRecover)
+		return;
 
 	fmState->cmdToRecover = 0;
-	//recovery(fmState->faultType); TODO: re-impl Initiate recovery func
+	if (fmState->faultType == 1) {
+      fmState->activeFS = 2;
+    }
+	// if (fmState->faultType == 2) {
+    //   fmState->activeRW = 2;
+    // }
 	fmState->isFaulted = 0;
 	fmState->isRecovering = 1;
 }
@@ -148,4 +153,8 @@ uint8_t handleFaultStatus(FmState *fmState, uint8_t faultDetected) {
 	return 0;
 }
 
-
+void alertGSU(FmState *fmState) {
+	if (fmState->faultType == 1) {
+		Serial.write(37);
+	} 
+}

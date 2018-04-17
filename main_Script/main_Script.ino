@@ -36,6 +36,8 @@ PixySPI_SS coarsePixy(CS_PIN);
 
 unsigned long timeLastReadPixy = 0;
 unsigned long current_time;
+unsigned long cmdToRun = 0;
+unsigned long lastcommand = 0;
 
 //Define Variables we'll be connecting to
 double deltaThetaRadFine1, deltaThetaRadFine2;
@@ -121,6 +123,8 @@ void getSecondaryFSReading();
 void getCSReading();
 void getBlockReading();
 void runFM();
+void getGSCommands();
+unsigned long getStartCommand();
 
 void setup() { 
   Serial.begin(115200);
@@ -175,21 +179,29 @@ void setup() {
 } 
 
 void loop() {
-  // Send current time to Labview
-  current_time = millis();
-  Serial.write(current_time>>24);
-  Serial.write(current_time>>16);
-  Serial.write(current_time>>8);
-  Serial.write(current_time);
+  // Get on off command
+  lastcommand = getStartCommand();
+  Serial.println(lastcommand);
+
+  if (lastcommand == 1) {
+  Serial.println("Into Loop!");
+  // // Send current time to Labview
+  // current_time = millis();
+  // Serial.write(current_time>>24);
+  // Serial.write(current_time>>16);
+  // Serial.write(current_time>>8);
+  // Serial.write(current_time);
 
   // Pull rw speed from motor controller
   rwSpeedBin = analogRead(A0);
   getRWSpeed(&rwSpeedRad, rwSpeedBin);
 
-  // Send rw speed to Labview
-  Serial.write(rwSpeedBin>>8);
-  Serial.write(rwSpeedBin);  
-  delay(100);
+  // // Send rw speed to Labview
+  // Serial.write(rwSpeedBin>>8);
+  // Serial.write(rwSpeedBin);  
+  // delay(100);
+
+  getGSCommands();
 
   unsigned long timeStamp = micros();
   storeRWSpeed(rwSpeedHist, timeStampHistory, rwStackPtr, rwSpeedRad, timeStamp);
@@ -220,10 +232,6 @@ void loop() {
     getOrderedHistory(coarseDeltaTheta, orderedCoarseDeltaTheta, sensorDataLength, sensorStackPtr);
     sensorStackPtr++;
     if (sensorStackPtr == sensorDataLength) sensorStackPtr = 0;
-
-    if (fmState->isFaulted && fmState->faultType == 1) {
-      fmState->activeFS = 2;
-    }
     
     runControl();
     sendTorque();
@@ -240,12 +248,53 @@ void loop() {
     sendTorque();
   }
   storeTorqueAndIncrementIndex(commandedTorqueHistory, &rwStackPtr, commandedTorque_mNm, rwDataLength);
+  }
 }
 
 void runFM() {
   // faultManagement will update fmState struct contents to reflect fault detected or not
   faultManagement(fmState, orderedRWSpeedHistory, orderedTimeStampHistory, rwDataLength, orderedCommandedTorqueHistory, orderedFineDeltaTheta, orderedCoarseDeltaTheta,
 	    sensorDataLength, MOI);
+}
+
+unsigned long getStartCommand() {
+  if (lastcommand == 0) {
+    pwm.pinDuty(PRIMARY_MOTOR_PIN, pwm_duty_inactive); // inactive duty cycle (127 PWM) on Pin 6 (Primary RW)
+    pwm.pinDuty(REDUNDANT_MOTOR_PIN, pwm_duty_inactive); // computed duty cycle on Pin 7 (Secondary RW)
+  }
+  if (Serial.available() > 0) {
+    cmdToRun = Serial.read();
+    if (cmdToRun == 122){
+      lastcommand = 1;
+    } else if (cmdToRun == 89){
+      lastcommand = 0;
+    } 
+  }
+  return lastcommand; 
+}
+
+void getGSCommands() {
+  // Will get commands from ground station if commands are avaliable to get
+  if (Serial.available() > 0) {
+    unsigned char commandType = Serial.read();
+    Serial.println(commandType);
+    if (commandType == 65) {
+      Serial.println("Command to fault rw");
+      fiState->cmdToFaultRW = 1;
+    } else if (commandType == 72) {
+      Serial.println("Command to fault pixy");
+      fiState->cmdToFaultFS = 1;
+    } else if (commandType == 107) {
+      Serial.println("Command to reset faults");
+      fiState->cmdToFaultRW = 0;
+      fiState->cmdToFaultFS = 0;
+      fmState->activeFS = 1;
+      fmState->activeRW = 1;
+    } else if (commandType == 111) {
+      Serial.println("Command to recover");
+      fmState->cmdToRecover = 1;
+    }
+  }
 }
 
 void runControl() {
@@ -319,23 +368,23 @@ void getCSReading() {
   deltaThetaRadCoarse = thetaDeg*convertDegToRad;
 }
 
-void injectTimedRWFault() {
-  // uncomment out these lines to inject a rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
-  if (millis() > 40000 && !fiState->cmdToFaultRW && millis() < 60000) {
-    Serial.println("faulting rw");
-    fiState->cmdToFaultRW = 1;
-  }
-  if (millis() > 80000 && fiState->cmdToFaultRW) {
-    Serial.println("Unfaulting rw");
-    fiState->cmdToFaultRW = 0;
-    fmState->activeRW = 2;
-  }
-}
+// void injectTimedRWFault() {
+//   // uncomment out these lines to inject a rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
+//   if (millis() > 40000 && !fiState->cmdToFaultRW && millis() < 60000) {
+//     Serial.println("faulting rw");
+//     fiState->cmdToFaultRW = 1;
+//   }
+//   if (millis() > 80000 && fiState->cmdToFaultRW) {
+//     Serial.println("Unfaulting rw");
+//     fiState->cmdToFaultRW = 0;
+//     fmState->activeRW = 2;
+//   }
+// }
 
-void injectTimedFSFault() {
-  if (millis() > 20000 && !fiState->cmdToFaultFS && millis() < 80000) {
-    Serial.println("faulting fs");
-    fiState->cmdToFaultFS = 1;
-  }
-}
+// void injectTimedFSFault() {
+//   if (millis() > 20000 && !fiState->cmdToFaultFS && millis() < 80000) {
+//     Serial.println("faulting fs");
+//     fiState->cmdToFaultFS = 1;
+//   }
+// }
 

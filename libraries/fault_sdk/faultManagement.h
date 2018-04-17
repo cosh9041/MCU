@@ -37,6 +37,9 @@ uint8_t handleFaultStatus(FmState *fmState, uint8_t faultDetected);
 void getResponseTorque(double *omega, unsigned long *t, double *responseTorque, double *commandedTorque, 
 	double *frictionTorque, uint16_t length, double MOI);
 
+
+void alertGSU(FmState *fmState);	
+
 #ifdef __cplusplus
 }
 #endif
