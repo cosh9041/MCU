@@ -39,7 +39,7 @@ unsigned long timeLastReadPixy = 0;
 //Define Variables we'll be connecting to
 double deltaThetaRadFine1, deltaThetaRadFine2;
 double deltaThetaRadCoarse;
-double Setpoint, deltaThetaRad, commandedTorque_mNm;
+double Setpoint, deltaThetaRad, commandedTorque_mNm, commandedTorqueSlew;
 
 //Specify the links and initial tuning parameters
 //double const Kp=6.31600775000411, Ki=0.200331632823233, Kd=36.7969404030176, N=0.5;
@@ -198,7 +198,7 @@ void loop() {
     deltaThetaRad = fmState->activeFS == 1 ? deltaThetaRadFine1 : deltaThetaRadFine2;
 
     // uncomment out these lines to inject a fs or rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
-    // injectTimedRWFault();
+    //injectTimedRWFault();
     //injectTimedFSFault();
     storeSensorData(fineDeltaTheta, coarseDeltaTheta, sensorStackPtr, deltaThetaRad, deltaThetaRadCoarse);
     getOrderedHistory(fineDeltaTheta, orderedFineDeltaTheta, sensorDataLength, sensorStackPtr);
@@ -211,19 +211,18 @@ void loop() {
     }
     
     runControl();
+    sendTorque();
   } else if(coarseBlocks) {
     deltaThetaRad = deltaThetaRadCoarse;
     runControl();
+    sendTorque();
   } else if (millis() > 5000) {
     // If we do not pick up blocks set PWM to 50% to shut off motors
-    pwm_duty_slew = deltaThetaRadCoarse < 0 ? 107 : 147;
-    if (fmState->activeRW == 1) {
-      pwm.pinDuty(PRIMARY_MOTOR_PIN, pwm_duty_slew);
-      pwm.pinDuty(REDUNDANT_MOTOR_PIN, pwm_duty_inactive);
-    } else {
-      pwm.pinDuty(PRIMARY_MOTOR_PIN, pwm_duty_inactive);
-      pwm.pinDuty(REDUNDANT_MOTOR_PIN, pwm_duty_slew);
-    }
+    commandedTorque_mNm = deltaThetaRadCoarse < 0 ? -2 : 2;
+    commandedTorque_mNm = injectRWFault(fiState, commandedTorque_mNm, rwSpeedRad, p1, p2, delta_omega, 
+        fmState->activeRW == 1);
+
+    sendTorque();
   }
   storeTorqueAndIncrementIndex(commandedTorqueHistory, &rwStackPtr, commandedTorque_mNm, rwDataLength);
 }
@@ -242,7 +241,6 @@ void runControl() {
   commandedTorque_mNm = injectRWFault(fiState, commandedTorque_mNm, rwSpeedRad, p1, p2, delta_omega, 
     fmState->activeRW == 1);
 
-  sendTorque();
 }
 
 void sendTorque() {
@@ -312,7 +310,7 @@ void injectTimedRWFault() {
     Serial.println("faulting rw");
     fiState->cmdToFaultRW = 1;
   }
-  if (millis() > 60000 && fiState->cmdToFaultRW) {
+  if (millis() > 80000 && fiState->cmdToFaultRW) {
     Serial.println("Unfaulting rw");
     fiState->cmdToFaultRW = 0;
     fmState->activeRW = 2;
@@ -324,9 +322,5 @@ void injectTimedFSFault() {
     Serial.println("faulting fs");
     fiState->cmdToFaultFS = 1;
   }
-  // if (millis() > 100000 && fiState->cmdToFaultFS) {
-  //   Serial.println("Unfaulting fs");
-  //   fiState->cmdToFaultFS = 0;
-  // }
 }
 
