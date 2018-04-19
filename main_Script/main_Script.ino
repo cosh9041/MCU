@@ -181,10 +181,9 @@ void setup() {
 void loop() {
   // Get on off command
   lastcommand = getStartCommand();
-  Serial.println(lastcommand);
 
   if (lastcommand == 1) {
-  Serial.println("Into Loop!");
+  //Serial.println("Into Loop!");
   // // Send current time to Labview
   // current_time = millis();
   // Serial.write(current_time>>24);
@@ -277,24 +276,27 @@ void getGSCommands() {
   // Will get commands from ground station if commands are avaliable to get
   if (Serial.available() > 0) {
     unsigned char commandType = Serial.read();
-    Serial.println(commandType);
+    // Serial.println(commandType);
     if (commandType == 65) {
-      Serial.println("Command to fault rw");
+      // Serial.println("Command to fault rw");
       fiState->cmdToFaultRW = 1;
     } else if (commandType == 72) {
-      Serial.println("Command to fault pixy");
+      // Serial.println("Command to fault pixy");
       fiState->cmdToFaultFS = 1;
     } else if (commandType == 107) {
-      Serial.println("Command to reset faults");
+      // Serial.println("Command to reset faults");
       fiState->cmdToFaultRW = 0;
       fiState->cmdToFaultFS = 0;
       fmState->activeFS = 1;
       fmState->activeRW = 1;
     } else if (commandType == 111) {
-      Serial.println("Command to recover");
+      // Serial.println("Command to recover");
       fmState->cmdToRecover = 1;
     }
   }
+  if (fmState->faultDetectedFlag) {
+    Serial.write(37);
+  } 
 }
 
 void runControl() {

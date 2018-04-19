@@ -22,6 +22,7 @@ typedef struct {
 	uint16_t size_of_ma; // number of items to use for moving average smoothing/debounce in error checking. 
 	double p1; 
 	double p2;
+	uint8_t faultDetectedFlag;
 } FmState;
 
 void initializeFaultManagementState(FmState *fmState, uint16_t size_of_ma, double p1, double p2);

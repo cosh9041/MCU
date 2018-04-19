@@ -17,4 +17,5 @@ void initializeFaultManagementState(FmState *fmState, uint16_t size_of_ma, doubl
   fmState->size_of_ma = size_of_ma;
   fmState->p1 = p1;
   fmState->p2 = p2;
+  fmState->faultDetectedFlag = 0;
 }
