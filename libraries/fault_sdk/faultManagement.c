@@ -69,7 +69,7 @@ void manageNewFaultDetected(FmState *fmState) {
 	fmState->isFaulted = 1;
 	fmState->faulting = 0;
 	/*TODO: Function to Alert GSU Function here*/
-	alertGSU(fmState);
+	// alertGSU(fmState);
 	switch(fmState->faultType) {
 		case 2:  // RW fault. turn off command to RW 1 to allow for visible deterioration of control
 			fmState->activeRW = 0;
@@ -97,7 +97,7 @@ void manageFaultAlreadyDetected(FmState *fmState) {
     // }
 	fmState->isFaulted = 0;
 	fmState->isRecovering = 1;
-	fmState->faultDetectedFlag = 0;
+	// fmState->faultDetectedFlag = 0;
 }
 
 uint8_t checkThreshold(double *data_x, double *data_y, uint16_t length, double threshold) {
@@ -155,7 +155,7 @@ uint8_t handleFaultStatus(FmState *fmState, uint8_t faultDetected) {
 }
 
 void alertGSU(FmState *fmState) {
-	if (fmState->faultType == 1) {
-		fmState->faultDetectedFlag = 1;
-	} 
+	// if (fmState->faultType == 1) {
+	// 	fmState->faultDetectedFlag = 1;
+	// } 
 }

@@ -294,9 +294,9 @@ void getGSCommands() {
       fmState->cmdToRecover = 1;
     }
   }
-  if (fmState->faultDetectedFlag) {
-    Serial.write(37);
-  } 
+  // if (fmState->faultDetectedFlag) {
+  //   Serial.write(37);
+  // } 
 }
 
 void runControl() {
