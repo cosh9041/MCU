@@ -194,12 +194,13 @@ void loop() {
     timeLastReadPixy = millis();
   }
 
+  injectTimedRWFault();
+  // injectTimedFSFault();
+
   if (fineBlocks1 || fineBlocks2) {
     deltaThetaRad = fmState->activeFS == 1 ? deltaThetaRadFine1 : deltaThetaRadFine2;
 
     // uncomment out these lines to inject a fs or rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
-    injectTimedRWFault();
-    injectTimedFSFault();
     storeSensorData(fineDeltaTheta, coarseDeltaTheta, sensorStackPtr, deltaThetaRad, deltaThetaRadCoarse);
     getOrderedHistory(fineDeltaTheta, orderedFineDeltaTheta, sensorDataLength, sensorStackPtr);
     getOrderedHistory(coarseDeltaTheta, orderedCoarseDeltaTheta, sensorDataLength, sensorStackPtr);
