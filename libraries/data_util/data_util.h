@@ -8,7 +8,7 @@ extern "C" {
 #include <inttypes.h>
 
 void storeRWSpeed(double *rwSpeedHistory, unsigned long *timeHistory, uint16_t index, double rwSpeed, unsigned long timeStamp);
-void storeSensorData(double *fineDeltaTheta, double *coarseDeltaTheta, uint16_t index, double fineDeltaThetaVal, double coarseDeltaThetaVal);
+void storeSensorData(double *fineDeltaTheta, double *coarseDeltaTheta, unsigned long *sensorTimeStampHist, uint16_t index, double fineDeltaThetaVal, double coarseDeltaThetaVal, unsigned long timeStamp);
 
 void storeTorqueAndIncrementIndex(double *commandedTorqueHistory, uint16_t *index, 
     double commandedTorque_mNm, uint16_t length);

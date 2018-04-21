@@ -86,10 +86,10 @@ double rwSpeedRad;
 // Physical characteristics
 double const p1 = 0.0000335653965; // mNm/(rad/s), viscous friction 
 double const p2 = 0.1303; // mNm, coloumb friction
-double MOI = .047; //MOI of RW, kg*m^2
+double MOI = .047/1000; //MOI of RW, kg*m^2
 double delta_omega = 15; // small delta near zero where we set torque to zero to simulate friction. TODO: Tune this value
-uint16_t const rwDataLength = 1000;
-uint16_t const sensorDataLength = 50;
+uint16_t const rwDataLength = 1500;
+uint16_t const sensorDataLength = 150;
 // rwStackPtr points to the most recent data point. The last 100 data points are accumulated "behind"
 // this index. For example, if the rwStackPtr is 55, the order (in terms of recency) of the stored indicies
 // is 55....0...99...56. I.e. the most recently stored index is 55 (just stored), and the oldest stored index is 56.
@@ -108,6 +108,8 @@ double fineDeltaTheta[sensorDataLength];
 double coarseDeltaTheta[sensorDataLength];
 double orderedFineDeltaTheta[sensorDataLength];
 double orderedCoarseDeltaTheta[sensorDataLength];
+unsigned long sensorTimeStampHist[sensorDataLength];
+unsigned long orderedSensorTimeStampHist[sensorDataLength];
 
 // Utility function specifications. Implementations are below loop()
 void sendTorque();
@@ -123,7 +125,7 @@ void runFM();
 
 void setup() { 
   Serial.begin(9600);
-  Serial.print("Starting...\n");
+  Serial.print("\% Starting...\n");
   finePixy1.init();
   finePixy2.init();
   coarsePixy.init();
@@ -173,7 +175,34 @@ void setup() {
   initializeFaultInjectState(fiState);
 } 
 
+uint8_t hasPrinted = 0;
+
 void loop() {
+  if (millis() > 25000 && !hasPrinted) {
+    Serial.println("\% Printing commanded torque (mNm), rw speed (rad/s), and time since start(microseconds)");
+    for (int i = rwDataLength - 1; i >= 0; i--) {
+      Serial.print(orderedCommandedTorqueHistory[i], 7);
+      Serial.print("   ");
+      Serial.print(orderedRWSpeedHistory[i], 7);
+      Serial.print("   ");
+      Serial.print(orderedTimeStampHistory[i]);
+      Serial.print("\n");
+    }
+
+    Serial.println("\% Printing deltaTheta (rads) and time since start (microseconds)");
+
+    for (int i = sensorDataLength-1; i >= 0; i--) {
+      Serial.print(fineDeltaTheta[i], 7);
+      Serial.print("   ");
+      Serial.print(orderedSensorTimeStampHist[i]);
+      Serial.print("\n");
+    }
+
+    hasPrinted = 1;
+  }
+  // Ensure the system is operational before starting fm
+  if (millis() > 10000) runFM();
+
   getRWSpeed(&rwSpeedRad, analogRead(A0));
 
   unsigned long timeStamp = micros();
@@ -184,8 +213,6 @@ void loop() {
   getOrderedHistory(commandedTorqueHistory, orderedCommandedTorqueHistory, rwDataLength, rwStackPtr);
   getOrderedHistoryLong(timeStampHistory, orderedTimeStampHistory, rwDataLength, rwStackPtr);
 
-  // Ensure the system is operational before starting fm
-  if (millis() > 10000) runFM();
 
   // NOTE: Pixy.getBlocks does a dirty nasty thing and returns 0 both when there are no blocks
   // detected AND when there is no information. This ambiguous case cost us a lot of wasted time
@@ -195,14 +222,17 @@ void loop() {
   }
 
   if (fineBlocks1 || fineBlocks2) {
+
+
     deltaThetaRad = fmState->activeFS == 1 ? deltaThetaRadFine1 : deltaThetaRadFine2;
 
     // uncomment out these lines to inject a fs or rw fault. DO NOT DELETE UNTIL GSU IS INTEGRATED
-    injectTimedRWFault();
-    injectTimedFSFault();
-    storeSensorData(fineDeltaTheta, coarseDeltaTheta, sensorStackPtr, deltaThetaRad, deltaThetaRadCoarse);
+    // injectTimedRWFault();
+    // injectTimedFSFault();
+    storeSensorData(fineDeltaTheta, coarseDeltaTheta, sensorTimeStampHist, sensorStackPtr, deltaThetaRad, deltaThetaRadCoarse, micros());
     getOrderedHistory(fineDeltaTheta, orderedFineDeltaTheta, sensorDataLength, sensorStackPtr);
     getOrderedHistory(coarseDeltaTheta, orderedCoarseDeltaTheta, sensorDataLength, sensorStackPtr);
+    getOrderedHistoryLong(sensorTimeStampHist, orderedSensorTimeStampHist, sensorDataLength, sensorStackPtr);
     sensorStackPtr++;
     if (sensorStackPtr == sensorDataLength) sensorStackPtr = 0;
 
@@ -244,7 +274,7 @@ void runControl() {
 }
 
 void sendTorque() {
-  pwm_duty = (commandedTorque_mNm*mNm_to_mA*mA_to_duty + pwmOffset)*duty_to_bin;
+    pwm_duty = (commandedTorque_mNm*mNm_to_mA*mA_to_duty + pwmOffset)*duty_to_bin;
 
   if (pwm_duty > 230) {
     pwm_duty = 230;
